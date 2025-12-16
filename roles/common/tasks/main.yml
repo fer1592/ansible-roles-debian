@@ -27,6 +27,7 @@
       - vim
       - openssh-server
       - network-manager
+      - curl
   become: true
 
 - name: Ensure avahi is installed if enabled
