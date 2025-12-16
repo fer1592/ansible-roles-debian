@@ -1,0 +1,244 @@
+---
+- name: Get current user
+  ansible.builtin.set_fact:
+    current_user: "{{ ansible_facts.user_id }}"
+    cacheable: true
+
+- name: Get path to python binaries
+  ansible.builtin.set_fact:
+    python_binaries_path: "{{ ansible_playbook_python | dirname }}"
+    cacheable: true
+
+- name: Set avahi enable fact
+  ansible.builtin.set_fact:
+    avahi_enabled: "{{ common_avahi_enabled | default(false) }}"
+    cacheable: true
+
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+  become: true
+
+- name: Ensure basic packages are installed
+  ansible.builtin.apt:
+    name:
+      - git
+      - jq
+      - vim
+      - openssh-server
+      - network-manager
+  become: true
+
+- name: Ensure avahi is installed if enabled
+  ansible.builtin.apt:
+    name:
+      - avahi-daemon
+      - avahi-utils
+  become: true
+  when: avahi_enabled
+
+- name: Ensure any extra packages are installed
+  ansible.builtin.apt:
+    name: "{{ key }}"
+  become: true
+  loop: "{{ common_extra_packages }}"
+  loop_control:
+    loop_var: key
+
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: yes
+  become: true
+
+- name: Auto-remove unneeded packages
+  ansible.builtin.apt:
+    autoremove: yes
+    purge: yes
+  become: true
+
+- name: Ensure .ssh directory exists
+  ansible.builtin.file:
+    path: /home/{{ current_user }}/.ssh
+    state: directory
+    mode: '0755'
+
+- name: Ensure all files under ~/.ssh are owned by the user
+  ansible.builtin.file:
+    path: /home/{{ current_user }}/.ssh
+    owner: "{{ current_user }}"
+    group: "{{ current_user }}"
+    mode: 0700
+    recurse: true
+  become: true
+
+- name: Ensure public keys in sshd_authorized_keys are present in authorized_keys
+  ansible.builtin.lineinfile:
+    path: /home/{{ current_user }}/.ssh/authorized_keys
+    state: present
+    regexp: "^{{ key }}"
+    create: true
+    line: "{{ key }}"
+  loop: "{{ common_sshd_authorized_keys }}"
+  loop_control:
+    loop_var: key
+
+- name: Ensure sshd don't allow password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PasswordAuthentication"
+    line: "PasswordAuthentication no"
+    state: present
+    create: false
+  become: true
+  register: sshd_password_authentication
+  when: common_sshd_disable_password_authentication
+
+- name: Ensure ssh allows public key authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^PubkeyAuthentication"
+    line: "PubkeyAuthentication yes"
+    state: present
+    create: false
+  become: true
+  register: sshd_pubkey_authentication
+
+- name: Ensure ssh is running
+  ansible.builtin.service:
+    name: ssh
+    state: started
+    enabled: yes
+  become: true
+  when: not sshd_password_authentication.changed and not sshd_pubkey_authentication.changed
+
+- name: Restart ssh if configuration changed
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  become: true
+  when: sshd_password_authentication.changed or sshd_pubkey_authentication.changed
+
+- name: Ensure pip is installed and up-to-date
+  ansible.builtin.pip:
+    name: pip
+    state: latest
+    executable: "{{ ansible_facts.python_binaries_path }}/pip"
+
+- name: Ensure ansible is installed and up-to-date
+  ansible.builtin.pip:
+    name: ansible
+    state: present
+    executable: "{{ ansible_facts.python_binaries_path }}/pip"
+
+- name: Ensure ansible-core is installed and up-to-date
+  ansible.builtin.pip:
+    name: ansible-core
+    state: present
+    executable: "{{ ansible_facts.python_binaries_path }}/pip"
+
+- name: Ensure avahi-daemon service is enabled and running if enabled
+  ansible.builtin.service:
+    name: avahi-daemon
+    state: started
+    enabled: yes
+  become: true
+  when: avahi_enabled
+
+- name: Ensure community.general collection is installed
+  ansible.builtin.command: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.general"
+
+- name: Ensure git pull.rebase is set to false
+  community.general.git_config:
+    name: pull.rebase
+    value: false
+    scope: global
+
+- name: Get github ssh fingerprint
+  ansible.builtin.shell: |
+    curl --silent https://api.github.com/meta \
+      | jq --raw-output '"github.com "+.ssh_keys[]'
+  register: github_ssh_fingerprint
+
+- name: Ensure the github host key is added to known_hosts
+  ansible.builtin.known_hosts:
+    name: github.com
+    key: "{{ host_key }}"
+    path: /home/{{ ansible_facts.user_id }}/.ssh/known_hosts
+    state: present
+  loop: "{{ github_ssh_fingerprint.stdout_lines }}"
+  loop_control:
+    loop_var: host_key
+
+- name: Ensure ansible-debian repository is updated
+  ansible.builtin.command: /usr/bin/git -C {{ common_ansible_debian_repo_path | default('.') }} pull
+
+- name: Ensure the systemd unit for running this playbook is created
+  ansible.builtin.template:
+    src: "systemd-playbook.service.j2"
+    dest: "/etc/systemd/system/{{ common_playbook_name | replace('.yml', '') }}-playbook.service"
+    mode: 0644
+  become: true
+  register: playbook_systemd_service_file
+
+- name: Ensure the systemd timer for running this playbook is created
+  ansible.builtin.template:
+    src: "systemd-playbook.timer.j2"
+    dest: "/etc/systemd/system/{{ common_playbook_name | replace('.yml', '') }}-playbook.timer"
+    mode: 0644
+  become: true
+  register: playbook_timer_systemd_service_file
+
+- name: Ensure the systemd timer is enabled and started
+  ansible.builtin.service:
+    name: "{{ common_playbook_name | replace('.yml', '') }}-playbook.timer"
+    state: started
+    enabled: yes
+  become: true
+
+- name: Force systemd to reread configs when config changes
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when: (playbook_systemd_service_file.changed | default(false)) or (playbook_timer_systemd_service_file.changed | default(false))
+  become: true
+
+- name: Set static IP with nmcli if common_static_ip_config is defined
+  community.general.nmcli:
+    type: "{{ common_static_ip_config.type }}"
+    conn_name: "{{ common_static_ip_config.conn_name }}"
+    ip4: "{{ common_static_ip_config.ip4 }}"
+    ifname: "{{ common_static_ip_config.ifname }}"
+    gw4: "{{ common_static_ip_config.gw4 }}"
+    dns4: "{{ common_static_ip_config.dns4 }}"
+    state: present
+    autoconnect: yes
+  become: true
+  when: common_static_ip_config is defined
+  register: nmcli_result
+
+- name: Schedule a reboot in 3 minutes if static IP changed
+  ansible.builtin.command: |
+    shutdown -r +3 "Reboot scheduled by Ansible due to static IP change"
+  become: true
+  when:
+    - common_static_ip_config is defined
+    - nmcli_result is changed
+
+- name: Ensure the {{ common_avahi_publish_hostname }} avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-{{ common_avahi_publish_hostname }}.service"
+    mode: 0644
+    owner: root
+  become: true
+  when: common_avahi_publish_hostname is defined and avahi_enabled
+  register: avahi_publish_service
+
+- name: Ensure the {{ common_avahi_publish_hostname }} avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd:
+    name: avahi-publish-{{ common_avahi_publish_hostname }}.service
+    state: "{{ 'restarted' if avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ avahi_publish_service.changed }}"
+  become: true
+  when: common_avahi_publish_hostname is defined and avahi_enabled

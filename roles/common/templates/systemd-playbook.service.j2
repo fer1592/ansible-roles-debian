@@ -1,0 +1,6 @@
+[Unit]
+Description={{ common_playbook_name }} playbook
+
+[Service]
+ExecStart={{ ansible_facts.python_binaries_path }}/ansible-playbook {{ playbook_dir }}/{{ common_playbook_name }} -i {{ playbook_dir }}/inventories/local/hosts
+User={{ ansible_facts.current_user }}

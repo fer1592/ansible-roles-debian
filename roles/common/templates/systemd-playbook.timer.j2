@@ -1,0 +1,12 @@
+[Unit]
+Description="Run the Ansible playbook {{ common_playbook_name }} once a day"
+
+[Timer]
+OnCalendar={{ common_systemd_timer_oncalendar }}
+{% if common_systemd_timer_onbootsec is defined %}
+OnBootSec={{ common_systemd_timer_onbootsec }}
+{% endif %}
+Unit={{ common_playbook_name | replace('.yml', '') }}-playbook.service
+
+[Install]
+WantedBy=multi-user.target
