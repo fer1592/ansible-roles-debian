@@ -171,7 +171,11 @@
     loop_var: host_key
 
 - name: Ensure ansible-debian repository is updated
-  ansible.builtin.command: /usr/bin/git -C {{ common_ansible_debian_repo_path | default('.') }} pull
+  ansible.builtin.git:
+    repo: 'git@github.com:fer1592/ansible-roles-debian.git'
+    dest: "{{ common_ansible_roles_debian_repo_path | default('.') }}"
+    version: main
+    update: true
 
 - name: Ensure the systemd unit for running this playbook is created
   ansible.builtin.template:
@@ -224,21 +228,21 @@
     - common_static_ip_config is defined
     - nmcli_result is changed
 
-- name: Ensure the {{ common_avahi_publish_hostname }} avahi-publish systemd service is created
+- name: Ensure the {{ common_avahi_publish_hostname | default('') }} avahi-publish systemd service is created
   ansible.builtin.template:
     src: systemd-avahi-publish.service.j2
     dest: "/etc/systemd/system/avahi-publish-{{ common_avahi_publish_hostname }}.service"
     mode: 0644
     owner: root
   become: true
-  when: common_avahi_publish_hostname is defined and avahi_enabled
+  when: avahi_enabled and common_avahi_publish_hostname is defined
   register: avahi_publish_service
 
-- name: Ensure the {{ common_avahi_publish_hostname }} avahi-publish systemd service is enabled and started
+- name: Ensure the {{ common_avahi_publish_hostname | default('') }} avahi-publish systemd service is enabled and started
   ansible.builtin.systemd:
     name: avahi-publish-{{ common_avahi_publish_hostname }}.service
     state: "{{ 'restarted' if avahi_publish_service.changed else 'started' }}"
     enabled: yes
     daemon_reload: "{{ avahi_publish_service.changed }}"
   become: true
-  when: common_avahi_publish_hostname is defined and avahi_enabled
+  when: avahi_enabled and common_avahi_publish_hostname is defined

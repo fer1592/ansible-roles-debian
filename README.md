@@ -1,9 +1,13 @@
 # Ansible Debian
 Contains a group of Ansible Roles ready to be used in a Debian 13 installation.
 
-## Instructions
+## Roles
 
-The intention of the following repository is to host a set of Ansible roles ready to be used on a Debian 13 installation. The main idea of this is to invoke the roles in your playbook in order to obtain the desired configurations. Each of the roles with its corresponding input variables are now listed in the following sections:
+The intention of the following repository is to host a set of Ansible roles ready to be used on a Debian 13 installation, and just in a single host locally. The main idea of this is to invoke the roles in your playbook in order to obtain the desired configurations. Each of the roles with its corresponding input variables are now listed in the following sections:
+
+### Why just for local usage?
+
+This is just for personal usage on a homeserver, so it's intended to run and self-heal and auto-update with minimal intervention. For sure it is possible to adapt it to use it in multiple hosts, but since it's not my use case, I haven't adapted it. If I ever release this and someone finds this useful, and whishes to contribute to adapt this, feel free to do so, I'll be happy to help.
 
 ---
 
@@ -31,7 +35,7 @@ The `Common` role executes the following actions on the system:
 * **Repository Control:**
     * Configures Git globally to prevent automatic rebase (`pull.rebase: false`).
     * Ensures GitHub SSH host keys are added to `known_hosts` for the current user.
-    * Updates the local `ansible-debian` repository using `git pull`.
+    * Updates the local `ansible-roles-debian` repository using `git pull`.
 * **Playbook Automation (Cron):**
     * Creates a `systemd` unit (`.service`) to execute the current playbook.
     * Creates and enables a `systemd` timer unit (`.timer`) to periodically execute the service unit (simulating a Cron job).
@@ -50,14 +54,99 @@ It is recommended to define these variables in the `group_vars/all.yml` file or 
 | `common_sshd_authorized_keys` | List of public SSH keys to include in `authorized_keys`. | list | **(None)** | Yes | Example: `['ssh-rsa AAA... user1', 'ssh-ed25519 AAA... user2']` |
 | `common_sshd_disable_password_authentication`| Disables password authentication in `sshd_config`. | boolean | **(Not Defined)** | No | If set to `true`, changes `PasswordAuthentication no`. |
 | `common_extra_packages` | List of additional Debian packages to install via `apt`. | list | `[]` | No | Example: `['htop', 'tmux', 'curl']` |
-| `common_ansible_debian_repo_path` | Local path of the `ansible-debian` repository for the `git pull` command. | string | `.` | No | Usually the path where the playbook is executed. |
+| `common_ansible_roles_debian_repo_path` | Local path of the `ansible-roles-debian` repository for the `git pull` command. | string | `.` | No | Usually the path where the playbook is executed. |
 | `common_static_ip_config` | Configuration object to set a static IP via `nmcli`. | dict | **(Not Defined)** | No | **Warning: Triggers a scheduled reboot.** Requires `type`, `conn_name`, `ip4`, `ifname`, `gw4`, and `dns4` keys. |
 | `common_avahi_enabled` | Enables the installation and service of Avahi for mDNS. | boolean | `false` | No | Installs `avahi-daemon` and `avahi-utils`. |
 | `common_avahi_publish_hostname` | Hostname to publish on the local network if Avahi is enabled. | string | **(Not Defined)** | No | Example: `my-server.local` |
 | `common_systemd_timer_oncalendar` | Expression to be used in the systemd unit that will call the playbook execution periodically. Check for examples [here](https://wiki.archlinux.org/title/Systemd/Timers). | string | **(Not Defined)** | Yes | Example: `daily`
 | `common_systemd_timer_onbootsec` | If defined, it will set the field `OnBootSec` in the `Systemd` timer unit. Allows to execute the playbook after an X ammount of time after the system boot. | string | **(Not Defined)** | No | Example: `15min` |
 
-## Initial Configuration Script (`scripts/config.sh`)
+## Initial Configuration
+
+In order to use the previous roles, you will need:
+1. To configure an `ssh` key, which should be registered in your github account, in order to allow the playbook to keep the roles up to date.
+2. An ansible playbook that calls these roles.
+3. An inventory file, which just basically have point to local.
+
+### SSH key
+
+If you already cloned this repo in the system where you want to use these roles, then feel free to skip this section. If you haven't generated the `ssh` key, then open the terminal and follow the next steps:
+
+1. Create the ´.ssh´ directory if it doesn't exist:
+```bash
+mkdir -p ~/.ssh
+```
+
+2. Copy or create your SSH key in the ´.ssh´ directory:
+```bash
+ssh-keygen -t ed25519 -b 512 -C "<your email here>" # to generate a new key
+```
+
+Make sure you add the public key into your github account. You can do this by copying the content of the public key file:
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+Then, go to your GitHub account settings, navigate to `SSH and GPG keys`, and add a new SSH key. Paste the content of the public key file into the key field.
+
+3. Clone this repository into your raspberry pi:
+```bash
+git clone git@github.com:fer1592/ansible-roles-debian.git
+```
+
+### Ansible playbook
+
+To use the roles contained in this repository, you simply need to create a main playbook file (e.g., `main.yml`) that targets your host and imports the roles.
+
+**Crucial Step:** When invoking the roles, you must define all **Mandatory** variables listed in the role documentation, for the roles you are using. If you are using the [Ansible Alternative directory layout](https://docs.ansible.com/projects/ansible/latest/tips_tricks/sample_setup.html#alternative-directory-layout), you can define the variables in the `group_vars` for your host instead of doing that in the runbook.
+
+#### Example Playbook (`home-assistant.yml`)
+
+This example demonstrates how to include the `Common` role and define its mandatory variables:
+
+```yaml
+---
+- name: Run Initial Server Setup
+  hosts: local
+  gather_facts: yes
+  become: yes
+  vars: # you can "ommit" this section if you follow the recommendations of the next section
+    common_playbook_name: home-assistant.yml
+    common_sshd_authorized_keys:
+      - ssh-rsa AAAAB3Nza... your_first_key_here
+      - ssh-ed25519 AAAAC3Nz... your_second_key_here
+    common_extra_packages:
+      - htop
+      - tmux
+    common_ssh_disable_password_authentication: true
+    common_systemd_timer_oncalendar: "daily"
+  roles:
+    # 1. The Common role must always be included first
+    - role: common
+    # 2. Other roles would be listed here
+    # - role: openmediavault
+    # - role: docker_services
+```
+
+### Inventory file
+
+I've designed these roles to be used in a directory structure as explained in the [Ansible Alternative directory layout](https://docs.ansible.com/projects/ansible/latest/tips_tricks/sample_setup.html#alternative-directory-layout), so, my recommendation for you is just to use it as well, since any warning for running the playbook with `local` will be suppressed. You can even create the playbook and inventory files in the current repository, since they will be just ignored by git. Basically, if you follow my way, for the inventory you will just need the following files:
+
+- `inventories/local/hosts`. Content should be:
+
+```
+[local]
+localhost ansible_python_interpreter="{{ ansible_playbook_python }}"
+```
+
+- inventories/local/group_vars/local.yml
+
+```yaml
+---
+# Here you can define all the variables to use in your playbook
+```
+
+### The `config.sh` script
 
 The provided script `scripts/config.sh` is designed to be executed on a clean Debian installation to set up the environment necessary to run Ansible playbooks.
 
