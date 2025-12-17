@@ -1,0 +1,95 @@
+---
+- name: Ensure cgroup support is enabled
+  ansible.builtin.lineinfile:
+    path: "/boot/firmware/cmdline.txt"
+    regexp: '^((?!.*\bcgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory\b).*)$'
+    line: '\1 cgroup_enable=cpuset cgroup_memory=1 cgroup_enable=memory'
+    backrefs: true
+  become: true
+
+- name: Ensure keyring directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  become: true
+
+- name: Add Docker GPG apt Key
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/debian/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: a+r
+  become: true
+
+- name: Set DPKG Architecture
+  ansible.builtin.set_fact:
+    dpkg_arch: "{{ 'amd64' if (ansible_architecture == 'x86_64' or ansible_architecture == 'i386') else 'arm64' }}"
+
+- name: Add Docker Repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+    state: present
+    update_cache: yes
+    filename: docker
+  become: true
+
+- name: Ensure docker is installed
+  ansible.builtin.apt:
+    name:
+    - docker-ce:{{ dpkg_arch }}
+    - docker-ce-cli:{{ dpkg_arch }}
+    - containerd.io:{{ dpkg_arch }}
+    - docker-buildx-plugin:{{ dpkg_arch }}
+    - docker-compose-plugin:{{ dpkg_arch }}
+    state: latest
+    update_cache: true
+  become: true
+
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+  become: true
+
+- name: Add user to docker group
+  ansible.builtin.user:
+    name: '{{ ansible_facts.current_user }}'
+    groups:
+    - docker
+    append: yes
+  become: true
+
+- name: Ensure docker service is enabled and running
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: yes
+  become: true
+
+- name: Ensure containerd service is enabled and running
+  ansible.builtin.service:
+    name: containerd
+    state: started
+    enabled: yes
+  become: true
+
+- name: Ensure dependencies for the community.docker collection are installed
+  ansible.builtin.pip:
+    name:
+    - docker
+    - requests
+    state: latest
+    executable: "{{ ansible_facts.python_binaries_path }}/pip"
+
+- name: Ensure the community.docker collection is installed
+  ansible.builtin.command: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.docker"
+
+- name: Ensure old docker images are cleaned up
+  community.docker.docker_prune:
+    images: yes
+    containers: no
+    networks: no
+    volumes: no
+  become: true
