@@ -21,7 +21,7 @@ The `Common` role executes the following actions on the system:
 
 * **Package Management:**
     * Updates the `apt` cache.
-    * Installs essential packages: `git`, `jq`, `vim`, `openssh-server`, `curl`, `gpg`, and `network-manager`.
+    * Installs essential packages: `git`, `jq`, `vim`, `openssh-server`, `curl`, `gpg`, `libaugeas-dev`, `gcc`, and `network-manager`.
     * Installs `avahi-daemon` and `avahi-utils` if Multicast DNS (mDNS) is enabled (`common_avahi_enabled`).
     * Installs any extra packages defined by the user (`common_extra_packages`).
     * Upgrades all system packages (`apt upgrade dist`) and auto-removes unneeded packages (`autoremove`, `purge`).
@@ -244,6 +244,59 @@ ansible-vault encrypt_string '<your-refresh-token>' --name twingate_connector_re
 | `twingate_connector_refresh_token` | Twingate Refresh Token. **Use Ansible Vault**. | string | **(None)** | Yes |
 | `twingate_connector_dns_server` | Custom DNS server for the connector to use. | string | `omit` | No |
 | `twingate_connector_docker_network` | Docker network name to attach the container to. | string | `bridge` | No |
+
+### Certbot
+
+This role sets up Certbot with the Cloudflare DNS plugin to manage SSL certificates via DNS-01 challenges. It handles the installation, Cloudflare credential management, and configures an automated renewal cron job with optional ntfy failure alerts.
+
+#### Performed Tasks
+
+* **Installation:** Installs `certbot` and `certbot-dns-cloudflare` using the system's Python pip.
+* **Environment Setup:** Creates symbolic links and the necessary directory structure for persistent certificate storage.
+* **Credential Management:** Deploys the `cloudflare.ini` file using a template.
+* **Automated Renewal:** Configures a cron job that runs twice daily. It includes a random delay to spread server load and triggers a `ntfy` alert if the renewal fails.
+
+#### Secret Management
+
+This role requires a Cloudflare API Token. **Do not store this in plain text.** Use Ansible Vault to encrypt the token in your secrets file:
+
+1. Obtain your `API Token` from the Cloudflare console, as indicated [here](https://certbot-dns-cloudflare.readthedocs.io/en/stable/#credentials).
+2. Add it to your encrypted secrets file:
+```yaml
+ansible-vault encrypt_string '<your-api-token>' --name certbot_cloudflare_api_token --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
+```
+
+#### Manual Certificate Generation
+
+Because initial generation requires specific flags and one-time verification, you must run the first command manually on the system. Once created, the cron job managed by this role will handle all future renewals.
+
+To generate the required certificates, execute the following command:
+
+```bash
+sudo certbot certonly \
+  --dns-cloudflare \
+  --dns-cloudflare-credentials ~/.secrets/certbot/cloudflare.ini \
+  --config-dir /home/<your user>/ansible-roles-debian-data/certbot \
+  --cert-name <custom-name> \
+  -d <your-domain.com>
+```
+
+Examples:
+
+```bash
+# Generate for AdGuard
+sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials ~/.secrets/certbot/cloudflare.ini --config-dir /home/myuser/ansible-roles-debian-data/certbot --cert-name adguard -d adguard.mydomain.xyz
+
+# Generate for n8n
+sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials ~/.secrets/certbot/cloudflare.ini --config-dir /home/myuser/ansible-roles-debian-data/certbot --cert-name n8n -d n8n.mydomain.xyz
+```
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `certbot_cloudflare_api_token` | Cloudflare API Token with DNS edit permissions. **Use Ansible Vault**. | string | **(None)** | Yes |
+| `certbot_ntfy_server_topic` | URL of the ntfy server (including topic) for failure alerts. | string | **(None)** | No |
 
 ## Initial Configuration
 

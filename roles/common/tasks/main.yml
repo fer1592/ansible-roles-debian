@@ -25,20 +25,22 @@
 - name: Ensure basic packages are installed
   ansible.builtin.apt:
     name:
-      - git
-      - jq
-      - vim
-      - openssh-server
-      - network-manager
-      - curl
-      - gpg
+    - git
+    - jq
+    - vim
+    - openssh-server
+    - network-manager
+    - curl
+    - gpg
+    - libaugeas-dev
+    - gcc
   become: true
 
 - name: Ensure avahi is installed if enabled
   ansible.builtin.apt:
     name:
-      - avahi-daemon
-      - avahi-utils
+    - avahi-daemon
+    - avahi-utils
   become: true
   when: avahi_enabled
 
@@ -124,22 +126,13 @@
   become: true
   when: sshd_password_authentication.changed or sshd_pubkey_authentication.changed
 
-- name: Ensure pip is installed and up-to-date
+- name: Ensure ansible and pip are installed and up-to-date
   ansible.builtin.pip:
-    name: pip
+    name:
+    - ansible
+    - ansible-core
+    - pip
     state: latest
-    executable: "{{ ansible_facts.python_binaries_path }}/pip"
-
-- name: Ensure ansible is installed and up-to-date
-  ansible.builtin.pip:
-    name: ansible
-    state: present
-    executable: "{{ ansible_facts.python_binaries_path }}/pip"
-
-- name: Ensure ansible-core is installed and up-to-date
-  ansible.builtin.pip:
-    name: ansible-core
-    state: present
     executable: "{{ ansible_facts.python_binaries_path }}/pip"
 
 - name: Ensure avahi-daemon service is enabled and running if enabled
@@ -175,12 +168,12 @@
   loop_control:
     loop_var: host_key
 
-# - name: Ensure ansible-roles-debian repository is updated
-#   ansible.builtin.git:
-#     repo: 'git@github.com:fer1592/ansible-roles-debian.git'
-#     dest: "{{ common_ansible_roles_debian_repo_path | default('.') }}"
-#     version: main
-#     update: true
+- name: Ensure ansible-roles-debian repository is updated
+  ansible.builtin.git:
+    repo: 'git@github.com:fer1592/ansible-roles-debian.git'
+    dest: "{{ common_ansible_roles_debian_repo_path | default('.') }}"
+    version: main
+    update: true
 
 - name: Ensure the systemd unit for running this playbook is created
   ansible.builtin.template:
@@ -230,8 +223,8 @@
     shutdown -r +3 "Reboot scheduled by Ansible due to static IP change"
   become: true
   when:
-    - common_static_ip_config is defined
-    - nmcli_result is changed
+  - common_static_ip_config is defined
+  - nmcli_result is changed
 
 - name: Ensure the {{ common_avahi_publish_hostname | default('') }} avahi-publish systemd service is created
   ansible.builtin.template:

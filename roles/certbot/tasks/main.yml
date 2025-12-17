@@ -1,0 +1,58 @@
+---
+- name: Ensure certbot is installed and up-to-date
+  ansible.builtin.pip:
+    name:
+    - certbot
+    - ansible-core
+    - certbot-dns-cloudflare
+    state: latest
+    executable: "{{ ansible_facts.python_binaries_path }}/pip"
+
+- name: Create certbot symbolic link
+  ansible.builtin.file:
+    src: "{{ python_binaries_path }}/certbot"
+    dest: /usr/bin/certbot
+    owner: "{{ current_user }}"
+    group: "{{ current_user }}"
+    state: link
+  become: true
+
+- name: Ensure ~/.secrets/certbot directory exists
+  ansible.builtin.file:
+    path: /home/{{ current_user }}/.secrets/certbot
+    state: directory
+    mode: '0755'
+
+- name: Ensure cloudflare.ini exists
+  ansible.builtin.template:
+    src: "cloudflare.ini.j2"
+    dest: "/home/{{ current_user }}/.secrets/certbot/cloudflare.ini"
+    owner: "{{ current_user }}"
+    group: "{{ current_user }}"
+    mode: 0700
+
+- name: Ensure certbot directory exists
+  ansible.builtin.file:
+    path: /home/{{ current_user }}/ansible-roles-debian-data/certbot
+    state: directory
+    owner: root # since the nginx container is executed as root, we leave root as the owner
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Set ntfy notification
+  ansible.builtin.set_fact:
+    ntfy_notification_command: "|| curl -k -d 'Certbot failed to renew certificates' {{ certbot_ntfy_server_topic }}"
+  when: certbot_ntfy_server_topic is defined
+
+- name: Ensure a cron for renewing certificates exists
+  ansible.builtin.cron:
+    name: "certbot renew"
+    minute: "0"
+    hour: "9,21"
+    day: "*"
+    month: "*"
+    weekday: "*"
+    user: root
+    job: "{{ ansible_facts.python_binaries_path }}/python -c 'import random; import time; time.sleep(random.random() * 3600)' && certbot renew -q --config-dir /home/{{ current_user }}/ansible-roles-debian-data/certbot {{ ntfy_notification_command | default('') }}"
+  become: true
