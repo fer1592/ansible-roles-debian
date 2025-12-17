@@ -1,0 +1,64 @@
+---
+- name: Pull the latest stable n8n image
+  community.docker.docker_image_pull:
+    name: n8nio/n8n
+    tag: stable
+    pull: always
+  become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ n8n_docker_network }}"
+    driver: "bridge"
+  when: n8n_docker_network is defined
+
+- name: Ensure the n8n container is running
+  community.docker.docker_container:
+    name: n8n
+    image: n8nio/n8n:stable
+    state: started
+    hostname: n8n
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ n8n_cpus }}"
+    memory: "{{ n8n_memory }}"
+    memory_swap: "{{ n8n_memory }}"
+    network_mode: "{{ n8n_docker_network | default('bridge') }}"
+    detach: true
+    published_ports: "{{ n8n_ports | default(omit) }}"
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: ["CMD-SHELL", "/usr/bin/wget --server-response --proxy off --no-verbose --tries=1 --timeout=3 127.0.0.1:5678/healthz -O /dev/null 2>&1 | grep -q 'HTTP/1.1 200 OK'"]
+    volumes:
+      - n8n_data:/home/node/.n8n
+    env: "{{ n8n_env_vars }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
+  when: n8n_avahi_publish is defined and n8n_avahi_publish
+
+- name: Ensure the n8n avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-n8n.service"
+    mode: 0644
+    owner: root
+  become: true
+  register: n8n_avahi_publish_service
+  when: n8n_avahi_publish is defined and n8n_avahi_publish and avahi_daemon_running and docker_running
+
+- name: Ensure the n8n avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-n8n.service
+    state: "{{ 'restarted' if n8n_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ n8n_avahi_publish_service.changed }}"
+  become: true
+  when: n8n_avahi_publish is defined and n8n_avahi_publish and avahi_daemon_running and docker_running

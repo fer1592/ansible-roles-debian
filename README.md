@@ -189,6 +189,29 @@ This role manages the deployment of **ntfy**, a simple HTTP-based pub-sub notifi
 | `ntfy_docker_network` | Docker network name to attach the container to. | string | `bridge` | No |
 | `ntfy_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
 
+### n8n
+
+This role manages the deployment of **n8n**, an extendable workflow automation tool, using Docker. It handles persistent data storage, resource limits, and optional local network discovery via Avahi.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest stable `n8nio/n8n` Docker image.
+* **Network Management:** Creates or joins a dedicated Docker network if `n8n_docker_network` is provided.
+* **Container Management:** Runs the n8n container with specific resource limits (CPU/Memory), custom environment variables, and a persistent volume (`n8n_data`).
+* **Health Monitoring:** Implements a healthcheck using `wget` to ensure the internal service is responsive.
+* **Avahi Integration (Optional):** Creates a systemd service to publish the n8n instance on the local network using mDNS.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `n8n_cpus` | CPU limit for the n8n container. | string | **(None)** | Yes |
+| `n8n_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `n8n_env_vars` | Dictionary of environment variables for n8n configuration. | dict | **(None)** | Yes |
+| `n8n_ports` | List of port mappings for the container. | list | `omit` | No |
+| `n8n_docker_network` | Docker network name for the container. | string | `bridge` | No |
+| `n8n_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:
