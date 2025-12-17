@@ -93,6 +93,31 @@ This role handles the deployment and configuration of AdGuard Home using Docker.
 | `adguard_docker_network` | Name of the Docker bridge network to create/use. | string | `bridge` | No |
 | `adguard_avahi_publish` | Enables the creation of a systemd service to publish via Avahi. | boolean | `false` | No |
 
+### Home Assistant
+
+This role manages the deployment of Home Assistant using Docker. It handles the creation of the necessary configuration files, manages resource limits, and supports device mapping for hardware integrations (e.g., Zigbee/Z-Wave dongles). It also includes optional Avahi integration for mDNS discovery.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest stable Home Assistant image from `ghcr.io`.
+* **Directory Structure:** Creates the configuration directory and ensures essential files (`configuration.yaml`, `automations.yaml`, `scenes.yaml`, and `scripts.yaml`) are present.
+* **Configuration:** Deploys the `configuration.yaml` file from a Jinja2 template.
+* **Container Management:** Runs the container in `host` network mode to ensure proper device discovery, applying CPU and memory limits.
+* **Hardware Support:** Maps specified host devices to the container for hardware-based integrations.
+* **Avahi Integration (Optional):** If enabled and the `avahi-daemon` is running, it creates a systemd service to publish Home Assistant on the local network.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `home_assistant_config_dir` | Subdirectory path for configuration files (relative to the role's base path). | string | **(None)** | Yes |
+| `home_assistant_cpus` | CPU limit for the container. | string | **(None)** | Yes |
+| `home_assistant_memory` | Memory limit for the container. | string | **(None)** | Yes |
+| `home_assistant_devices` | List of device nodes to map into the container (e.g., `["/dev/ttyUSB0:/dev/ttyUSB0"]`). | list | **(None)** | Yes |
+| `home_assistant_timezone` | Timezone to be used by the container (e.g., `Europe/Madrid`). | string | **(None)** | Yes |
+| `home_assistant_language` | Language setting for the container environment. | string | **(None)** | Yes |
+| `home_assistant_avahi_publish` | Enables the creation of a systemd service to publish via Avahi. | boolean | `false` | No |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:

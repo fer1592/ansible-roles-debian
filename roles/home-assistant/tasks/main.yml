@@ -1,0 +1,108 @@
+---
+- name: Pull the latest stable Home Assistant image
+  community.docker.docker_image_pull:
+    name: ghcr.io/home-assistant/home-assistant
+    tag: stable
+    pull: always
+  become: true
+
+- name: Ensure the Home Assistant configuration directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}"
+    state: directory
+    owner: root
+    mode: 0755
+  become: true
+
+- name: Ensure Home Assistant configuration file is present
+  ansible.builtin.template:
+    src: configuration.yaml.j2
+    dest: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/configuration.yaml"
+    owner: root
+    mode: 0644
+  become: true
+  register: ha_config_file
+
+- name: Ensure Home Assistant Automation configuration file is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/automations.yaml"
+    state: touch
+    owner: root
+    mode: 0644
+  become: true
+
+- name: Ensure Home Assistant Scenes configuration file is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/scenes.yaml"
+    state: touch
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: Ensure Home Assistant Scripts configuration file is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/scripts.yaml"
+    state: touch
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: Ensure the Home Assistant container is running
+  community.docker.docker_container:
+    name: home-assistant
+    image: ghcr.io/home-assistant/home-assistant:stable
+    state: started
+    hostname: home-assistant
+    auto_remove: false
+    restart_policy: unless-stopped
+    restart: "{{ ha_config_file.changed | default(false) }}"
+    cpus: "{{ home_assistant_cpus }}"
+    memory: "{{ home_assistant_memory }}"
+    memory_swap: "{{ home_assistant_memory }}"
+    detach: true
+    devices: "{{ home_assistant_devices }}"
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: ["CMD", "curl", "-f", "http://localhost:8123/manifest.json"]
+    volumes:
+    - "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}:{{ home_assistant_config_dir}}:rw"
+    - "/run/dbus:/run/dbus:ro"
+    capabilities:
+    - "NET_ADMIN"
+    - "NET_RAW"
+    env:
+      TZ: "{{ home_assistant_timezone }}"
+      LANG: "{{ home_assistant_language }}"
+    network_mode: host
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running
+  when: home_assistant_avahi_publish is defined and home_assistant_avahi_publish and avahi_daemon_running
+
+- name: Ensure the home-assistant avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-home-assistant.service"
+    mode: 0644
+    owner: root
+  become: true
+  when: home_assistant_avahi_publish is defined and home_assistant_avahi_publish and avahi_daemon_running
+  register: ha_avahi_publish_service
+
+- name: Ensure the home-assistant avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-home-assistant.service
+    state: "{{ 'restarted' if ha_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ ha_avahi_publish_service.changed }}"
+  become: true
+  when: home_assistant_avahi_publish is defined and home_assistant_avahi_publish and avahi_daemon_running
