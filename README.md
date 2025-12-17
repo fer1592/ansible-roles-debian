@@ -69,6 +69,30 @@ This role handles the idempotent installation of the Docker Community Edition (C
 
 No input variables needed
 
+### AdGuard Home
+
+This role handles the deployment and configuration of AdGuard Home using Docker. It allows for full configuration through a Jinja2 template, and optionally integrates with Avahi for mDNS service publishing.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest stable `adguard/adguardhome` Docker image.
+* **Directory Structure:** Creates persistent directories for configuration and work data within the user's home directory (`ansible-roles-debian-data/adguard`).
+* **Configuration:** Generates the `AdGuardHome.yaml` configuration file from a template whenever the `adguard_config` variable is defined.
+* **Container Management:** Runs the AdGuard Home container with resource limits (CPUs, Memory), custom port mappings, and persistent volume mounts.
+* **Service Health:** Automatically restarts the container if the configuration template changes.
+* **Avahi Integration (Optional):** If enabled and the `avahi-daemon` is running, it creates and starts a systemd service to publish AdGuard Home on the local network.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `adguard_config` | Dictionary containing the AdGuard Home YAML configurations you want to include in the configuration. If you don't want to keep the configuration in the values, it's recommended to don't include this variable, and let AdGuard to manage it. | dict | **(Not Defined)** | No |
+| `adguard_ports` | List of port mappings for the Docker container (e.g., `["53:53/udp", "80:80/tcp"]`). | list | **(None)** | Yes |
+| `adguard_cpus` | CPU limit for the container. | string | **(None)** | Yes |
+| `adguard_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `adguard_docker_network` | Name of the Docker bridge network to create/use. | string | `bridge` | No |
+| `adguard_avahi_publish` | Enables the creation of a systemd service to publish via Avahi. | boolean | `false` | No |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:

@@ -14,6 +14,9 @@
     avahi_enabled: "{{ common_avahi_enabled | default(false) }}"
     cacheable: true
 
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
 - name: Update apt cache
   ansible.builtin.apt:
     update_cache: yes
@@ -28,6 +31,7 @@
       - openssh-server
       - network-manager
       - curl
+      - gpg
   become: true
 
 - name: Ensure avahi is installed if enabled
@@ -171,7 +175,7 @@
   loop_control:
     loop_var: host_key
 
-- name: Ensure ansible-debian repository is updated
+- name: Ensure ansible-roles-debian repository is updated
   ansible.builtin.git:
     repo: 'git@github.com:fer1592/ansible-roles-debian.git'
     dest: "{{ common_ansible_roles_debian_repo_path | default('.') }}"

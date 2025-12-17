@@ -1,0 +1,95 @@
+---
+- name: Pull the latest stable adguardhome image
+  community.docker.docker_image_pull:
+    name: adguard/adguardhome
+    tag: latest
+    pull: always
+  become: true
+
+- name: Ensure base dir for adguardhome is present
+  ansible.builtin.file:
+    path: /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard
+    state: directory
+
+- name: Ensure workdir for adguardhome is present
+  ansible.builtin.file:
+    path: /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard/workdir
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Ensure conf dir for adguardhome is present
+  ansible.builtin.file:
+    path: /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard/conf
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Ensure that config file is created and updated if adguard_config is defined
+  ansible.builtin.template:
+    src: "AdGuardHome.yaml.j2"
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard/conf/AdGuardHome.yaml"
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+  when: adguard_config is defined
+  register: adguard_config_file
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ adguard_docker_network }}"
+    driver: "bridge"
+  when: adguard_docker_network is defined
+
+- name: Ensure the adguardhome container is running
+  community.docker.docker_container:
+    name: adguardhome
+    image: adguard/adguardhome:latest
+    state: started
+    hostname: adguardhome
+    auto_remove: false
+    restart_policy: unless-stopped
+    restart: "{{ adguard_config_file.changed | default(false) }}"
+    cpus: "{{ adguard_cpus }}"
+    memory: "{{ adguard_memory }}"
+    memory_swap: "{{ adguard_memory }}"
+    network_mode: "{{ adguard_docker_network | default('bridge') }}"
+    detach: true
+    published_ports: "{{ adguard_ports }}"
+    volumes:
+      - /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard/workdir:/opt/adguardhome/workdir
+      - /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard/conf:/opt/adguardhome/conf
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running'
+  when: adguard_avahi_publish is defined and adguard_avahi_publish and avahi_daemon_running
+
+- name: Ensure the adguard avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-adguard.service"
+    mode: 0644
+    owner: root
+  become: true
+  when: adguard_avahi_publish is defined and adguard_avahi_publish and avahi_daemon_running
+  register: adguard_avahi_publish_service
+
+- name: Ensure the adguard avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-adguard.service
+    state: "{{ 'restarted' if adguard_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ adguard_avahi_publish_service.changed }}"
+  become: true
+  when: adguard_avahi_publish is defined and adguard_avahi_publish and avahi_daemon_running

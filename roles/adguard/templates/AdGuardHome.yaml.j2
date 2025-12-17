@@ -1,0 +1,355 @@
+http:
+  pprof:
+    port: {{ adguard_config.http.pprof.port | default(6060) }}
+    enabled: {{ adguard_config.http.pprof.enabled | default(false) }}
+  address: {{ adguard_config.http.address | default('0.0.0.0:80') }}
+  session_ttl: {{ adguard_config.http.session_ttl | default('720h') }}
+{% if adguard_config.users is defined and adguard_config.users is iterable %}
+users:
+{% for user in adguard_config.users %}
+  - name: {{ user.name | default('') }}
+    password: {{ user.password | default('') }}
+{% endfor %}
+{% else %}
+users: []
+{% endif %}
+auth_attempts: {{ adguard_config.auth_attempts | default(5) }}
+block_auth_min: {{ adguard_config.block_auth_min | default(15) }}
+http_proxy: "{{ adguard_config.http_proxy | default('') }}"
+language: "{{ adguard_config.language | default('') }}"
+theme: {{ adguard_config.theme | default('auto') }}
+dns:
+  bind_hosts:
+{% if adguard_config.dns.bind_hosts is defined and adguard_config.dns.bind_hosts is iterable %}
+    {% for host in adguard_config.dns.bind_hosts %}
+    - {{ host }}
+    {% endfor %}
+{% else %}
+    - 0.0.0.0
+{% endif %}
+  port: {{ adguard_config.dns.port | default(53) }}
+  anonymize_client_ip: {{ adguard_config.dns.anonymize_client_ip | default(false) }}
+  ratelimit: {{ adguard_config.dns.ratelimit | default(20) }}
+  ratelimit_subnet_len_ipv4: {{ adguard_config.dns.ratelimit_subnet_len_ipv4 | default(24) }}
+  ratelimit_subnet_len_ipv6: {{ adguard_config.dns.ratelimit_subnet_len_ipv6 | default(56) }}
+{% if adguard_config.dns.ratelimit_whitelist is defined and adguard_config.dns.ratelimit_whitelist is iterable %}
+  ratelimit_whitelist:
+    {% for ip in adguard_config.dns.ratelimit_whitelist %}
+    - {{ ip }}
+    {% endfor %}
+{% else %}
+  ratelimit_whitelist: []
+{% endif %}
+  refuse_any: {{ adguard_config.dns.refuse_any | default(true) }}
+{% if adguard_config.dns.upstream_dns is defined and adguard_config.dns.upstream_dns is iterable %}
+  upstream_dns:
+    {% for dns_server in adguard_config.dns.upstream_dns %}
+- {{ dns_server }}
+    {% endfor -%}
+{% else %}
+  upstream_dns: []
+{% endif %}
+
+  upstream_dns_file: "{{ adguard_config.dns.upstream_dns_file | default('') }}"
+{% if adguard_config.dns.bootstrap_dns is defined and adguard_config.dns.bootstrap_dns is iterable %}
+  bootstrap_dns:
+    {% for dns_server in adguard_config.dns.bootstrap_dns %}
+  - {{ dns_server }}
+    {% endfor %}
+{% else %}
+  bootstrap_dns: []
+{%- endif %}
+
+{% if adguard_config.dns.fallback_dns is defined and adguard_config.dns.fallback_dns is iterable %}
+  fallback_dns:
+    {% for dns_server in adguard_config.dns.fallback_dns %}
+  - {{ dns_server }}
+    {% endfor %}
+{% else %}
+  fallback_dns: []
+{% endif %}
+
+  upstream_mode: {{ adguard_config.dns.upstream_mode | default('load_balance') }}
+  fastest_timeout: {{ adguard_config.dns.fastest_timeout | default('1s') }}
+{% if adguard_config.dns.allowed_clients is defined and adguard_config.dns.allowed_clients is iterable %}
+  allowed_clients:
+    {% for client in adguard_config.dns.allowed_clients %}
+  - {{ client }}
+    {% endfor %}
+{% else %}
+  allowed_clients: []
+{% endif %}
+{% if adguard_config.dns.disallowed_clients is defined and adguard_config.dns.disallowed_clients is iterable %}
+  disallowed_clients:
+    {% for client in adguard_config.dns.disallowed_clients %}
+  - {{ client }}
+    {% endfor %}
+{% else %}
+  disallowed_clients: []
+{% endif %}
+  blocked_hosts:
+{% if adguard_config.dns.blocked_hosts is defined and adguard_config.dns.blocked_hosts is iterable %}
+    {% for host in adguard_config.dns.blocked_hosts %}
+    - {{ host }}
+    {% endfor %}
+{% else %}
+    - version.bind
+    - id.server
+    - hostname.bind
+{% endif %}
+{% if adguard_config.dns.trusted_proxies is defined and adguard_config.dns.trusted_proxies is iterable %}
+  trusted_proxies:
+    {% for proxy in adguard_config.dns.trusted_proxies %}
+    - {{ proxy }}
+    {% endfor %}
+{% else %}
+  trusted_proxies: []
+{%- endif %}
+
+  cache_enabled: {{ adguard_config.dns.cache_enabled | default(true) }}
+  cache_size: {{ adguard_config.dns.cache_size | default(4194304) }}
+  cache_ttl_min: {{ adguard_config.dns.cache_ttl_min | default(0) }}
+  cache_ttl_max: {{ adguard_config.dns.cache_ttl_max | default(0) }}
+  cache_optimistic: {{ adguard_config.dns.cache_optimistic | default(false) }}
+  cache_optimistic_answer_ttl: {{ adguard_config.dns.cache_optimistic_answer_ttl | default('30s') }}
+  cache_optimistic_max_age: {{ adguard_config.dns.cache_optimistic_max_age | default('12h') }}
+{% if adguard_config.dns.bogus_nxdomain is defined and adguard_config.dns.bogus_nxdomain is iterable %}
+  bogus_nxdomain:
+    {% for ip in adguard_config.dns.bogus_nxdomain %}
+    - {{ ip }}
+    {% endfor %}
+{% else %}
+  bogus_nxdomain: []
+{% endif %}
+  aaaa_disabled: {{ adguard_config.dns.aaaa_disabled | default(false) }}
+  enable_dnssec: {{ adguard_config.dns.enable_dnssec | default(false) }}
+  edns_client_subnet:
+    custom_ip: "{{ adguard_config.dns.edns_client_subnet.custom_ip | default('') }}"
+    enabled: {{ adguard_config.dns.edns_client_subnet.enabled | default(false) }}
+    use_custom: {{ adguard_config.dns.edns_client_subnet.use_custom | default(false) }}
+  max_goroutines: {{ adguard_config.dns.max_goroutines | default(300) }}
+  handle_ddr: {{ adguard_config.dns.handle_ddr | default(true) }}
+{% if adguard_config.dns.ipset is defined and adguard_config.dns.ipset is iterable %}
+  ipset:
+    {% for entry in adguard_config.dns.ipset %}
+    - {{ entry }}
+    {% endfor %}
+{% else %}
+  ipset: []
+{% endif %}
+  ipset_file: "{{ adguard_config.dns.ipset_file | default('') }}"
+  bootstrap_prefer_ipv6: {{ adguard_config.dns.bootstrap_prefer_ipv6 | default(false) }}
+  upstream_timeout: {{ adguard_config.dns.upstream_timeout | default('10s') }}
+{% if adguard_config.dns.private_networks is defined and adguard_config.dns.private_networks is iterable %}
+  private_networks:
+    {% for net in adguard_config.dns.private_networks %}
+    - {{ net }}
+    {% endfor %}
+{% else %}
+  private_networks: []
+{% endif %}
+  use_private_ptr_resolvers: {{ adguard_config.dns.use_private_ptr_resolvers | default(true) }}
+{% if adguard_config.dns.local_ptr_upstreams is defined and adguard_config.dns.local_ptr_upstreams is iterable %}
+  local_ptr_upstreams:
+    {% for upstream in adguard_config.dns.local_ptr_upstreams %}
+    - {{ upstream }}
+    {% endfor %}
+{% else %}
+  local_ptr_upstreams: []
+{% endif %}
+  use_dns64: {{ adguard_config.dns.use_dns64 | default(false) }}
+{% if adguard_config.dns.dns64_prefixes is defined and adguard_config.dns.dns64_prefixes is iterable %}
+  dns64_prefixes:
+    {% for prefix in adguard_config.dns.dns64_prefixes %}
+    - {{ prefix }}
+    {% endfor %}
+{% else %}
+  dns64_prefixes: []
+{% endif %}
+  serve_http3: {{ adguard_config.dns.serve_http3 | default(false) }}
+  use_http3_upstreams: {{ adguard_config.dns.use_http3_upstreams | default(false) }}
+  serve_plain_dns: {{ adguard_config.dns.serve_plain_dns | default(true) }}
+  hostsfile_enabled: {{ adguard_config.dns.hostsfile_enabled | default(true) }}
+  pending_requests:
+    enabled: {{ adguard_config.dns.pending_requests.enabled | default(true) }}
+tls:
+  enabled: {{ adguard_config.tls.enabled | default(false) }}
+  server_name: "{{ adguard_config.tls.server_name | default('') }}"
+  force_https: {{ adguard_config.tls.force_https | default(false) }}
+  port_https: {{ adguard_config.tls.port_https | default(443) }}
+  port_dns_over_tls: {{ adguard_config.tls.port_dns_over_tls | default(853) }}
+  port_dns_over_quic: {{ adguard_config.tls.port_dns_over_quic | default(853) }}
+  port_dnscrypt: {{ adguard_config.tls.port_dnscrypt | default(0) }}
+  dnscrypt_config_file: "{{ adguard_config.tls.dnscrypt_config_file | default('') }}"
+  allow_unencrypted_doh: {{ adguard_config.tls.allow_unencrypted_doh | default(false) }}
+  certificate_chain: "{{ adguard_config.tls.certificate_chain | default('') }}"
+  private_key: "{{ adguard_config.tls.private_key | default('') }}"
+  certificate_path: "{{ adguard_config.tls.certificate_path | default('') }}"
+  private_key_path: "{{ adguard_config.tls.private_key_path | default('') }}"
+  strict_sni_check: {{ adguard_config.tls.strict_sni_check | default(false) }}
+querylog:
+  dir_path: "{{ adguard_config.querylog.dir_path | default('') }}"
+{% if adguard_config.querylog.ignored is defined and adguard_config.querylog.ignored is iterable %}
+  ignored:
+    {% for entry in adguard_config.querylog.ignored %}
+    - {{ entry }}
+    {% endfor %}
+{% else %}
+  ignored: []
+{% endif %}
+  interval: {{ adguard_config.querylog.interval | default('2160h') }}
+  size_memory: {{ adguard_config.querylog.size_memory | default(1000) }}
+  enabled: {{ adguard_config.querylog.enabled | default(true) }}
+  file_enabled: {{ adguard_config.querylog.file_enabled | default(true) }}
+statistics:
+  dir_path: "{{ adguard_config.statistics.dir_path | default('') }}"
+{% if adguard_config.statistics.ignored is defined and adguard_config.statistics.ignored is iterable %}
+  ignored:
+    {% for entry in adguard_config.statistics.ignored %}
+    - {{ entry }}
+    {% endfor %}
+{% else %}
+  ignored: []
+{% endif %}
+  interval: {{ adguard_config.statistics.interval | default('24h') }}
+  enabled: {{ adguard_config.statistics.enabled | default(true) }}
+{% if adguard_config.filters is defined and adguard_config.filters is iterable %}
+filters:
+{% for filter in adguard_config.filters %}
+  - enabled: {{ filter.enabled | default(true) }}
+    url: {{ filter.url | default('') }}
+    name: {{ filter.name | default('') }}
+    id: {{ filter.id | default(loop.index) }}
+{% endfor %}
+{% else %}
+filters: []
+{% endif %}
+{% if adguard_config.whitelist_filters is defined and adguard_config.whitelist_filters is iterable %}
+whitelist_filters:
+    {% for filter in adguard_config.whitelist_filters %}
+    - {{ filter }}
+    {% endfor %}
+{% else %}
+
+whitelist_filters: []
+{% endif %}
+{% if adguard_config.user_rules is defined and adguard_config.user_rules is iterable %}
+user_rules:
+    {% for rule in adguard_config.user_rules %}
+- '{{ rule }}'
+    {% endfor %}
+{% else %}
+user_rules: []
+{%- endif %}
+
+dhcp:
+  enabled: {{ adguard_config.dhcp.enabled | default(false) }}
+  interface_name: "{{ adguard_config.dhcp.interface_name | default('') }}"
+  local_domain_name: {{ adguard_config.dhcp.local_domain_name | default('lan') }}
+  dhcpv4:
+    gateway_ip: "{{ adguard_config.dhcp.dhcpv4.gateway_ip | default('') }}"
+    subnet_mask: "{{ adguard_config.dhcp.dhcpv4.subnet_mask | default('') }}"
+    range_start: "{{ adguard_config.dhcp.dhcpv4.range_start | default('') }}"
+    range_end: "{{ adguard_config.dhcp.dhcpv4.range_end | default('') }}"
+    lease_duration: {{ adguard_config.dhcp.dhcpv4.lease_duration | default(86400) }}
+    icmp_timeout_msec: {{ adguard_config.dhcp.dhcpv4.icmp_timeout_msec | default(1000) }}
+{% if adguard_config.dhcp.dhcpv4.options is defined and adguard_config.dhcp.dhcpv4.options is iterable %}
+    options:
+      {% for option in adguard_config.dhcp.dhcpv4.options %}
+      - {{ option }}
+      {% endfor %}
+{% else %}
+    options: []
+{% endif %}
+  dhcpv6:
+    range_start: "{{ adguard_config.dhcp.dhcpv6.range_start | default('') }}"
+    lease_duration: {{ adguard_config.dhcp.dhcpv6.lease_duration | default(86400) }}
+    ra_slaac_only: {{ adguard_config.dhcp.dhcpv6.ra_slaac_only | default(false) }}
+    ra_allow_slaac: {{ adguard_config.dhcp.dhcpv6.ra_allow_slaac | default(false) }}
+filtering:
+  blocking_ipv4: "{{ adguard_config.filtering.blocking_ipv4 | default('') }}"
+  blocking_ipv6: "{{ adguard_config.filtering.blocking_ipv6 | default('') }}"
+  blocked_services:
+    schedule:
+      time_zone: {{ adguard_config.filtering.blocked_services.schedule.time_zone | default('UTC') }}
+{% if adguard_config.filtering.blocked_services.ids is defined and adguard_config.filtering.blocked_services.ids is iterable %}
+    ids:
+      {% for id in adguard_config.filtering.blocked_services.ids %}
+      - {{ id }}
+      {% endfor %}
+{% else %}
+    ids: []
+{% endif %}
+  protection_disabled_until: {{ adguard_config.filtering.protection_disabled_until | default('null') }}
+  safe_search:
+    enabled: {{ adguard_config.filtering.safe_search.enabled | default('false') }}
+    bing: {{ adguard_config.filtering.safe_search.bing | default('true') }}
+    duckduckgo: {{ adguard_config.filtering.safe_search.duckduckgo | default('true') }}
+    ecosia: {{ adguard_config.filtering.safe_search.ecosia | default('true') }}
+    google: {{ adguard_config.filtering.safe_search.google | default('true') }}
+    pixabay: {{ adguard_config.filtering.safe_search.pixabay | default('true') }}
+    yandex: {{ adguard_config.filtering.safe_search.yandex | default('true') }}
+    youtube: {{ adguard_config.filtering.safe_search.youtube | default('true') }}
+  blocking_mode: {{ adguard_config.filtering.safe_search.blocking_mode | default('default') }}
+  parental_block_host: {{ adguard_config.filtering.safe_search.parental_block_host | default('family-block.dns.adguard.com') }}
+  safebrowsing_block_host: {{ adguard_config.filtering.safe_search.safebrowsing_block_host | default('standard-block.dns.adguard.com') }}
+{% if adguard_config.filtering.rewrites is defined and adguard_config.filtering.rewrites is iterable %}
+  rewrites:
+  {% for rewrite in adguard_config.filtering.rewrites %}
+  - 'domain': {{ rewrite.domain | default('') }}
+      'answer': {{ rewrite.answer | default('') }}
+      enabled: true
+  {% endfor %}
+{% else %}
+  rewrites: []
+{% endif %}
+
+{% if adguard_config.filtering.safe_fs_patterns is defined and adguard_config.filtering.safe_fs_patterns is iterable -%}
+  safe_fs_patterns:
+      {% for safe_fs_pattern in adguard_config.filtering.safe_fs_patterns %}
+      - {{ safe_fs_pattern }}
+      {% endfor %}
+{% else %}
+  safe_fs_patterns:
+    - /opt/adguardhome/work/userfilters/*
+{% endif %}
+  safebrowsing_cache_size: {{ adguard_config.filtering.safebrowsing_cache_size.safebrowsing_cache_size | default(1048576) }}
+  safesearch_cache_size: {{ adguard_config.filtering.safebrowsing_cache_size.safesearch_cache_size | default(1048576) }}
+  parental_cache_size: {{ adguard_config.filtering.safebrowsing_cache_size.parental_cache_size | default(1048576) }}
+  cache_time: {{ adguard_config.filtering.safebrowsing_cache_size.cache_time | default(30) }}
+  filters_update_interval: {{ adguard_config.filtering.safebrowsing_cache_size.filters_update_interval | default(24) }}
+  blocked_response_ttl: {{ adguard_config.filtering.safebrowsing_cache_size.blocked_response_ttl | default(10) }}
+  filtering_enabled: {{ adguard_config.filtering.safebrowsing_cache_size.filtering_enabled | default('true') }}
+  rewrites_enabled: {{ adguard_config.filtering.safebrowsing_cache_size.rewrites_enabled | default('true') }}
+  parental_enabled: {{ adguard_config.filtering.safebrowsing_cache_size.parental_enabled | default('false') }}
+  safebrowsing_enabled: {{ adguard_config.filtering.safebrowsing_cache_size.safebrowsing_enabled | default('false') }}
+  protection_enabled: {{ adguard_config.filtering.safebrowsing_cache_size.protection_enabled | default('true') }}
+clients:
+  runtime_sources:
+    whois: {{ adguard_config.clients.runtime_sources.whois | default('true') }}
+    arp: {{ adguard_config.clients.runtime_sources.arp | default('true') }}
+    rdns: {{ adguard_config.clients.runtime_sources.rdns | default('true') }}
+    dhcp: {{ adguard_config.clients.runtime_sources.dhcp | default('true') }}
+    hosts: {{ adguard_config.clients.runtime_sources.hosts | default('true') }}
+{% if adguard_config.clients.persistent is defined and adguard_config.clients.persistent is iterable %}
+  persistent:
+      {% for per in adguard_config.clients.persistent %}
+      - {{ per }}
+      {% endfor %}
+{% else %}
+  persistent: []
+{% endif %}
+log:
+  enabled: {{ adguard_config.log.enabled | default('true') }}
+  file: "{{ adguard_config.log.file | default('') }}"
+  max_backups: {{ adguard_config.log.max_backups | default(0) }}
+  max_size: {{ adguard_config.log.max_size | default(100) }}
+  max_age: {{ adguard_config.log.max_age | default(3) }}
+  compress: {{ adguard_config.log.compress | default('false') }}
+  local_time: {{ adguard_config.log.local_time | default('false') }}
+  verbose: {{ adguard_config.log.verbose | default('false') }}
+os:
+  group: "{{ adguard_config.os.group | default('') }}"
+  user: "{{ adguard_config.os.user | default('') }}"
+  rlimit_nofile: {{ adguard_config.os.rlimit_nofile | default(0) }}
+schema_version: {{ adguard_config.schema_version | default(32) }}
