@@ -21,7 +21,7 @@ The `Common` role executes the following actions on the system:
 
 * **Package Management:**
     * Updates the `apt` cache.
-    * Installs essential packages: `git`, `jq`, `vim`, `openssh-server`, and **`network-manager`**.
+    * Installs essential packages: `git`, `jq`, `vim`, `openssh-server`, `curl`, `gpg`, and `network-manager`.
     * Installs `avahi-daemon` and `avahi-utils` if Multicast DNS (mDNS) is enabled (`common_avahi_enabled`).
     * Installs any extra packages defined by the user (`common_extra_packages`).
     * Upgrades all system packages (`apt upgrade dist`) and auto-removes unneeded packages (`autoremove`, `purge`).
@@ -60,6 +60,14 @@ It is recommended to define these variables in the `group_vars/all.yml` file or 
 | `common_avahi_publish_hostname` | Hostname to publish on the local network if Avahi is enabled. | string | **(Not Defined)** | No | Example: `my-server.local` |
 | `common_systemd_timer_oncalendar` | Expression to be used in the systemd unit that will call the playbook execution periodically. Check for examples [here](https://wiki.archlinux.org/title/Systemd/Timers). | string | **(Not Defined)** | Yes | Example: `daily`
 | `common_systemd_timer_onbootsec` | If defined, it will set the field `OnBootSec` in the `Systemd` timer unit. Allows to execute the playbook after an X ammount of time after the system boot. | string | **(Not Defined)** | No | Example: `15min` |
+
+### docker-host
+
+This role handles the idempotent installation of the Docker Community Edition (CE) stack. It automatically configures the necessary official repositories for your Debian release and architecture (`amd64`/`arm64`). It also adds the current user to the `docker` group, enabling the use of the Docker CLI without `sudo` after a session restart. It also ensures the core services are running and performs essential cleanup of unused resources.
+
+### Input Variables
+
+No input variables needed
 
 ## Initial Configuration
 

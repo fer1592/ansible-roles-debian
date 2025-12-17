@@ -17,11 +17,11 @@
 
 - name: Set DPKG Architecture
   ansible.builtin.set_fact:
-    dpkg_arch: "{{ 'amd64' if (ansible_architecture == 'x86_64' or ansible_architecture == 'i386') else 'arm64' }}"
+    dpkg_arch: "{{ 'amd64' if (ansible_facts[\"architecture\"] == 'x86_64' or ansible_facts[\"architecture\"] == 'i386') else 'arm64' }}"
 
 - name: Add Docker Repository
   ansible.builtin.apt_repository:
-    repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+    repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_facts[\"distribution_release\"] }} stable"
     state: present
     update_cache: yes
     filename: docker
