@@ -165,6 +165,30 @@ ansible-vault encrypt_string $secured_token --name vaultwarden_admin_token --vau
 | `vaultwarden_docker_network` | Name of the Docker network to use. | string | `bridge` | No |
 | `vaultwarden_avahi_publish` | Enables publishing via Avahi. | boolean | `false` | No |
 
+### ntfy
+
+This role manages the deployment of **ntfy**, a simple HTTP-based pub-sub notification service, using Docker. It handles persistent storage for the message cache, configures resource limits, and supports local network publishing via Avahi.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest `binwiederhier/ntfy` Docker image.
+* **Directory Structure:** Creates a dedicated cache directory within the user's data folder to ensure notification persistence.
+* **Network Management:** Configures a custom Docker network if `ntfy_docker_network` is defined.
+* **Container Management:** Runs the ntfy container with a specific command to use the local cache database, applying CPU and memory limits.
+* **Health Monitoring:** Includes a healthcheck to ensure the ntfy service is responsive.
+* **Avahi Integration (Optional):** If enabled, it creates a systemd service to publish ntfy on the local network for mDNS discovery.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `ntfy_cpus` | CPU limit for the ntfy container. | string | **(None)** | Yes |
+| `ntfy_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `ntfy_env_vars` | Dictionary of environment variables for ntfy configuration. | dict | **(None)** | Yes |
+| `ntfy_ports` | List of port mappings for the container. | list | `omit` | No |
+| `ntfy_docker_network` | Docker network name to attach the container to. | string | `bridge` | No |
+| `ntfy_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:

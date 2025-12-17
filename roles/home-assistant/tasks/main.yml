@@ -8,7 +8,7 @@
 
 - name: Ensure the Home Assistant configuration directory is present
   ansible.builtin.file:
-    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}"
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/home-assistant{{ home_assistant_config_dir }}"
     state: directory
     owner: root
     mode: 0755
@@ -17,7 +17,7 @@
 - name: Ensure Home Assistant configuration file is present
   ansible.builtin.template:
     src: configuration.yaml.j2
-    dest: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/configuration.yaml"
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/home-assistant{{ home_assistant_config_dir }}/configuration.yaml"
     owner: root
     mode: 0644
   become: true
@@ -25,7 +25,7 @@
 
 - name: Ensure Home Assistant Automation configuration file is present
   ansible.builtin.file:
-    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/automations.yaml"
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/home-assistant{{ home_assistant_config_dir }}/automations.yaml"
     state: touch
     owner: root
     mode: 0644
@@ -33,7 +33,7 @@
 
 - name: Ensure Home Assistant Scenes configuration file is present
   ansible.builtin.file:
-    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/scenes.yaml"
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/home-assistant{{ home_assistant_config_dir }}/scenes.yaml"
     state: touch
     owner: root
     group: root
@@ -42,7 +42,7 @@
 
 - name: Ensure Home Assistant Scripts configuration file is present
   ansible.builtin.file:
-    path: "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}/scripts.yaml"
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/home-assistant{{ home_assistant_config_dir }}/scripts.yaml"
     state: touch
     owner: root
     group: root
@@ -68,7 +68,7 @@
       retries: 3
       test: ["CMD", "curl", "-f", "http://localhost:8123/manifest.json"]
     volumes:
-    - "/home/{{ ansible_facts.user_id }}/home-assistant{{ home_assistant_config_dir }}:{{ home_assistant_config_dir}}:rw"
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/home-assistant{{ home_assistant_config_dir }}:{{ home_assistant_config_dir}}:rw"
     - "/run/dbus:/run/dbus:ro"
     capabilities:
     - "NET_ADMIN"
@@ -86,7 +86,7 @@
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:
     avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
-  when: home_assistant_avahi_publish is defined and home_assistant_avahi_publish and avahi_daemon_running
+  when: home_assistant_avahi_publish is defined and home_assistant_avahi_publish
 
 - name: Ensure the home-assistant avahi-publish systemd service is created
   ansible.builtin.template:

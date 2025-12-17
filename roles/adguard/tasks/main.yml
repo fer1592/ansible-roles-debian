@@ -60,7 +60,7 @@
     memory_swap: "{{ adguard_memory }}"
     network_mode: "{{ adguard_docker_network | default('bridge') }}"
     detach: true
-    published_ports: "{{ adguard_ports }}"
+    published_ports: "{{ adguard_ports | default(omit) }}"
     volumes:
       - /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard/workdir:/opt/adguardhome/workdir
       - /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/adguard/conf:/opt/adguardhome/conf
@@ -73,7 +73,7 @@
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:
     avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
-  when: adguard_avahi_publish is defined and adguard_avahi_publish and avahi_daemon_running
+  when: adguard_avahi_publish is defined and adguard_avahi_publish
 
 - name: Ensure the adguard avahi-publish systemd service is created
   ansible.builtin.template:
@@ -82,8 +82,8 @@
     mode: 0644
     owner: root
   become: true
-  when: adguard_avahi_publish is defined and adguard_avahi_publish and avahi_daemon_running
   register: adguard_avahi_publish_service
+  when: adguard_avahi_publish is defined and adguard_avahi_publish and avahi_daemon_running
 
 - name: Ensure the adguard avahi-publish systemd service is enabled and started
   ansible.builtin.systemd_service:
