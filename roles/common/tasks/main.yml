@@ -175,12 +175,12 @@
   loop_control:
     loop_var: host_key
 
-- name: Ensure ansible-roles-debian repository is updated
-  ansible.builtin.git:
-    repo: 'git@github.com:fer1592/ansible-roles-debian.git'
-    dest: "{{ common_ansible_roles_debian_repo_path | default('.') }}"
-    version: main
-    update: true
+# - name: Ensure ansible-roles-debian repository is updated
+#   ansible.builtin.git:
+#     repo: 'git@github.com:fer1592/ansible-roles-debian.git'
+#     dest: "{{ common_ansible_roles_debian_repo_path | default('.') }}"
+#     version: main
+#     update: true
 
 - name: Ensure the systemd unit for running this playbook is created
   ansible.builtin.template:

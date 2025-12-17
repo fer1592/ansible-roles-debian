@@ -1,0 +1,69 @@
+---
+# - name: Pull the latest stable vaultwarden image
+#   community.docker.docker_image_pull:
+#     name: quay.io/vaultwarden/server
+#     tag: latest-alpine
+#     pull: always
+#   become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ vaultwarden_docker_network }}"
+    driver: "bridge"
+  when: vaultwarden_docker_network is defined
+
+- name: Ensure the vaultwarden container is running
+  community.docker.docker_container:
+    name: vaultwarden
+    image: quay.io/vaultwarden/server:latest-alpine
+    state: started
+    hostname: vaultwarden
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ vaultwarden_cpus }}"
+    memory: "{{ vaultwarden_memory }}"
+    memory_swap: "{{ vaultwarden_memory }}"
+    detach: true
+    network_mode: "{{ vaultwarden_docker_network | default('bridge') }}"
+    published_ports: "{{ vaultwarden_ports | default(omit) }}"
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: ["CMD", "curl", "-f", "http://localhost/alive"]
+    volumes:
+      - vaultwarden_data:/data/
+    env:
+      ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"
+      SIGNUPS_ALLOWED: "{{ vaultwarden_signups_allowed }}"
+      INVITATIONS_ALLOWED: "{{ vaultwarden_invitations_allowed }}"
+      ROCKET_ADDRESS: "127.0.0.1"
+      ROCKET_PORT: "{{ vaultwarden_port }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
+  when: vaultwarden_avahi_publish is defined and vaultwarden_avahi_publish
+
+- name: Ensure the vaultwarden avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-vaultwarden.service"
+    mode: 0644
+    owner: root
+  become: true
+  when: vaultwarden_avahi_publish is defined and vaultwarden_avahi_publish and avahi_daemon_running
+  register: vaultwarden_avahi_publish_service
+
+- name: Ensure the vaultwarden avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-vaultwarden.service
+    state: "{{ 'restarted' if vaultwarden_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ vaultwarden_avahi_publish_service.changed }}"
+  become: true
+  when: vaultwarden_avahi_publish is defined and vaultwarden_avahi_publish and avahi_daemon_running

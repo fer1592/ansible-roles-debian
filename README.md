@@ -63,7 +63,7 @@ It is recommended to define these variables in the `group_vars/all.yml` file or 
 
 ### docker-host
 
-This role handles the idempotent installation of the Docker Community Edition (CE) stack. It automatically configures the necessary official repositories for your Debian release and architecture (`amd64`/`arm64`). It also adds the current user to the `docker` group, enabling the use of the Docker CLI without `sudo` after a session restart. It also ensures the core services are running and performs essential cleanup of unused resources.
+This role **must be the second**, since all the rest of the modules use docker to deploy the applications, except for the `openmediavault`. This role handles the idempotent installation of the Docker Community Edition (CE) stack. It automatically configures the necessary official repositories for your Debian release and architecture (`amd64`/`arm64`). It also adds the current user to the `docker` group, enabling the use of the Docker CLI without `sudo` after a session restart. It also ensures the core services are running and performs essential cleanup of unused resources.
 
 ### Input Variables
 
@@ -93,7 +93,7 @@ This role handles the deployment and configuration of AdGuard Home using Docker.
 | `adguard_docker_network` | Name of the Docker bridge network to create/use. | string | `bridge` | No |
 | `adguard_avahi_publish` | Enables the creation of a systemd service to publish via Avahi. | boolean | `false` | No |
 
-### Home Assistant
+### home-ssistant
 
 This role manages the deployment of Home Assistant using Docker. It handles the creation of the necessary configuration files, manages resource limits, and supports device mapping for hardware integrations (e.g., Zigbee/Z-Wave dongles). It also includes optional Avahi integration for mDNS discovery.
 
@@ -117,6 +117,53 @@ This role manages the deployment of Home Assistant using Docker. It handles the 
 | `home_assistant_timezone` | Timezone to be used by the container (e.g., `Europe/Madrid`). | string | **(None)** | Yes |
 | `home_assistant_language` | Language setting for the container environment. | string | **(None)** | Yes |
 | `home_assistant_avahi_publish` | Enables the creation of a systemd service to publish via Avahi. | boolean | `false` | No |
+
+### vaultwarden
+
+This role deploys a Vaultwarden instance using Docker. It handles container lifecycle, data persistence, and optional mDNS publishing via Avahi. It is designed to be used behind a reverse proxy (like Nginx).
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest `quay.io/vaultwarden/server:latest-alpine` image.
+* **Network Management:** Creates a dedicated Docker network if `vaultwarden_docker_network` is defined.
+* **Container Management:** Runs the Vaultwarden container with resource limits, healthchecks, and persistent volume (`vaultwarden_data`).
+* **Avahi Integration (Optional):** Creates and manages a systemd service to publish Vaultwarden on the local network.
+
+#### Admin Token Generation
+
+Vaultwarden requires a secure `ADMIN_TOKEN`. To generate one and store it securely:
+1. Generate a random string: `openssl rand -base64 48`
+
+```bash
+token=$(openssl rand -base64 48)
+```
+
+2. Hash it with Argon2 for better security.
+
+```bash
+secured_token=$(echo -n "<generated password>" | argon2 "$(openssl rand -base64 32)" -e -id -k 65540 -t 3 -p 4)
+```
+
+3. Save the result in your encrypted vault file (see [**Ansible Vault Setup**](#ansible-vault-setup) below).
+
+- You generated a random token, and created the encrypted file ´vaultwarden.yml´ with ansible-vault:
+```bash
+ansible-vault encrypt_string $secured_token --name vaultwarden_admin_token --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
+```
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `vaultwarden_cpus` | CPU limit for the container. | string | **(None)** | Yes |
+| `vaultwarden_memory` | Memory and swap limit. | string | **(None)** | Yes |
+| `vaultwarden_admin_token` | Admin token (plain or hashed). **Use Ansible Vault.** | string | **(None)** | Yes |
+| `vaultwarden_port` | Internal port for the Rocket server. | string | **(None)** | Yes |
+| `vaultwarden_ports` | List of port mappings for the Docker container (e.g., `["80:80/tcp"]`). | list | **(None)** | Yes |
+| `vaultwarden_signups_allowed` | Whether to allow new user registrations. | boolean | **(None)** | Yes |
+| `vaultwarden_invitations_allowed` | Whether to allow users to invite others. | boolean | **(None)** | Yes |
+| `vaultwarden_docker_network` | Name of the Docker network to use. | string | `bridge` | No |
+| `vaultwarden_avahi_publish` | Enables publishing via Avahi. | boolean | `false` | No |
 
 ## Initial Configuration
 
@@ -151,6 +198,31 @@ Then, go to your GitHub account settings, navigate to `SSH and GPG keys`, and ad
 git clone git@github.com:fer1592/ansible-roles-debian.git
 ```
 
+### Ansible Vault Setup
+
+Since some roles (like vaultwarden and twingate) require sensitive information, you must set up Ansible Vault to encrypt your secrets.
+
+1. **Create the Vault Password File**: To avoid typing the password every time, store it in a hidden file:
+```bash
+mkdir -p ~/.ansible
+echo "your_vault_password" > ~/.ansible/vault-password-file
+chmod 600 ~/.ansible/vault-password-file
+```
+
+2. Create an Encrypted Secrets File (e.g., secrets.yml):
+
+```bash
+ansible-vault create secrets.yml --vault-password-file ~/.ansible/vault-password-file
+```
+
+3. Generate and store the required secrets. For it, check the section of each role, you will find instructions for it when needed.
+
+4. When executing your playbook, always include the password file flag:
+
+```bash
+ansible-playbook -i inventories/local/hosts main.yml --vault-password-file ~/.ansible/vault-password-file
+```
+
 ### Ansible playbook
 
 To use the roles contained in this repository, you simply need to create a main playbook file (e.g., `main.yml`) that targets your host and imports the roles.
@@ -167,6 +239,8 @@ This example demonstrates how to include the `Common` role and define its mandat
   hosts: local
   gather_facts: yes
   become: yes
+  vars_files:
+  - secrets.yml # or whatever path is for your secrets file
   vars: # you can "ommit" this section if you follow the recommendations of the next section
     common_playbook_name: home-assistant.yml
     common_sshd_authorized_keys:
@@ -179,10 +253,11 @@ This example demonstrates how to include the `Common` role and define its mandat
     common_systemd_timer_oncalendar: "daily"
   roles:
     # 1. The Common role must always be included first
-    - role: common
+    - common
+    - docker-host
     # 2. Other roles would be listed here
-    # - role: openmediavault
-    # - role: docker_services
+    # openmediavault
+    # docker_services
 ```
 
 ### Inventory file

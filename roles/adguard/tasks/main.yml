@@ -72,7 +72,7 @@
 
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:
-    avahi_daemon_running: ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running'
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
   when: adguard_avahi_publish is defined and adguard_avahi_publish and avahi_daemon_running
 
 - name: Ensure the adguard avahi-publish systemd service is created

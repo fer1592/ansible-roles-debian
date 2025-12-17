@@ -32,4 +32,4 @@ fi
 venv/ansible/bin/ansible-galaxy collection install -U community.docker
 
 # Run the ansible playbook for the initial configuration
-venv/ansible/bin/ansible-playbook -i inventories/local/hosts "${playbook_file}"
+venv/ansible/bin/ansible-playbook -i inventories/local/hosts "${playbook_file}" --vault-password-file ~/.ansible/vault-password-file
