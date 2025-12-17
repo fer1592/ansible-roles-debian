@@ -1,0 +1,41 @@
+---
+- name: Pull the latest Twingate Connector image
+  community.docker.docker_image_pull:
+    name: twingate/connector
+    tag: "1"
+    pull: always
+  become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ twingate_connector_docker_network }}"
+    driver: "bridge"
+  when: twingate_connector_docker_network is defined
+
+- name: Ensure the Twingate Connector container is running
+  community.docker.docker_container:
+    name: twingate-connector
+    image: twingate/connector:1
+    state: started
+    hostname: twingate-connector
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ twingate_connector_cpus }}"
+    memory: "{{ twingate_connector_memory }}"
+    memory_swap: "{{ twingate_connector_memory }}"
+    detach: true
+    sysctls:
+      net.ipv4.ping_group_range: "0 2147483647"
+    env:
+      TWINGATE_NETWORK: "fjperezosan"
+      TWINGATE_ACCESS_TOKEN: "{{ twingate_connector_access_token }}"
+      TWINGATE_REFRESH_TOKEN: "{{ twingate_connector_refresh_token }}"
+      TWINGATE_LABEL_HOSTNAME: "`hostname`"
+      TWINGATE_LABEL_DEPLOYED_BY: "docker"
+      TWINGATE_DNS: "{{ twingate_connector_dns_server | default(omit) }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+  when: ansible_facts['services']['docker.service']['state'] | default('not-found') == 'running'

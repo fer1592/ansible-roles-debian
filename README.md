@@ -212,6 +212,39 @@ This role manages the deployment of **n8n**, an extendable workflow automation t
 | `n8n_docker_network` | Docker network name for the container. | string | `bridge` | No |
 | `n8n_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
 
+### twingate-connector
+
+This role deploys a Twingate Connector using Docker. It allows for secure, remote access to your local network without opening inbound firewall ports. It requires an Access and Refresh token generated from the Twingate Admin Console.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest Twingate Connector image (`twingate/connector:1`).
+* **Network Management:** Joins a specific Docker network if `twingate_connector_docker_network` is provided.
+* **Container Management:** Runs the connector with optimized `sysctls` for network performance (ping range) and specific environment variables.
+* **Security:** Uses encrypted tokens for authentication.
+
+#### Secret Management (Tokens)
+
+The Twingate Connector requires sensitive tokens. These **must** be stored in your encrypted vault file (refer to the **Ansible Vault Setup** section at the beginning of this README).
+
+1. Obtain your `Access Token` and `Refresh Token` from the Twingate Admin Console.
+2. Add them to your encrypted secrets file:
+```yaml
+ansible-vault encrypt_string '<your-access-token>' --name twingate_connector_access_token --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
+ansible-vault encrypt_string '<your-refresh-token>' --name twingate_connector_refresh_token --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
+```
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `twingate_connector_cpus` | CPU limit for the connector container. | string | **(None)** | Yes |
+| `twingate_connector_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `twingate_connector_access_token` | Twingate Access Token. **Use Ansible Vault**. | string | **(None)** | Yes |
+| `twingate_connector_refresh_token` | Twingate Refresh Token. **Use Ansible Vault**. | string | **(None)** | Yes |
+| `twingate_connector_dns_server` | Custom DNS server for the connector to use. | string | `omit` | No |
+| `twingate_connector_docker_network` | Docker network name to attach the container to. | string | `bridge` | No |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:
