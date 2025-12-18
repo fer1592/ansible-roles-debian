@@ -36,7 +36,7 @@
       ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"
       SIGNUPS_ALLOWED: "{{ vaultwarden_signups_allowed }}"
       INVITATIONS_ALLOWED: "{{ vaultwarden_invitations_allowed }}"
-      ROCKET_ADDRESS: "127.0.0.1"
+      ROCKET_ADDRESS: "0.0.0.0"
       ROCKET_PORT: "{{ vaultwarden_port }}"
     log_driver: json-file
     log_options:

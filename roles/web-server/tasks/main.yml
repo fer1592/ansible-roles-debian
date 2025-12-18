@@ -1,0 +1,214 @@
+---
+- name: Pull the latest Nginx image
+  community.docker.docker_image_pull:
+    name: nginx
+    tag: stable
+    pull: always
+  become: true
+
+- name: Ensure the Nginx configuration directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+
+- name: Ensure the Nginx configuration file is present
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/nginx.conf"
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  register: nginx_config
+
+- name: Ensure the Nginx conf.d directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/conf.d"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+
+- name: Ensure the Nginx default.conf file is present
+  ansible.builtin.template:
+    src: default.conf.j2
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/conf.d/default.conf"
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  register: nginx_default_conf
+
+- name: Ensure community.crypto collection is installed if web_server_enable_self_signed_ssl_certificate is true
+  ansible.builtin.command: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.crypto"
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Ensure the SSL directory is present if web_server_enable_self_signed_ssl_certificate is true
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ssl"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Ensure the CA directory is present if web_server_enable_self_signed_ssl_certificate is true
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ca"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Create CA private key if web_server_enable_self_signed_ssl_certificate is true
+  community.crypto.openssl_privatekey:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ca/ca-certificate.key"
+    type: RSA
+    size: 4096
+  vars:
+    ansible_python_interpreter: "{{ ansible_facts.python_binaries_path }}/python"
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Create CA certificate signing request
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ca/ca-certificate.key"
+    common_name: Local CA
+    use_common_name_for_san: false  # since we do not specify SANs, don't use CN as a SAN
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage:
+      - keyCertSign
+    key_usage_critical: true
+  register: ca_csr
+  vars:
+    ansible_python_interpreter: "{{ ansible_facts.python_binaries_path }}/python"
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Create self-signed CA certificate from CSR
+  community.crypto.x509_certificate:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ca/ca-certificate.pem"
+    csr_content: "{{ ca_csr.csr }}"
+    privatekey_path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ca/ca-certificate.key"
+    provider: selfsigned
+  vars:
+    ansible_python_interpreter: "{{ ansible_facts.python_binaries_path }}/python"
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Create private key if web_server_enable_self_signed_ssl_certificate is true
+  community.crypto.openssl_privatekey:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ssl/private.key"
+    type: RSA
+    size: 4096
+  vars:
+    ansible_python_interpreter: "{{ ansible_facts.python_binaries_path }}/python"
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Create CSR for self-signed certificate if web_server_enable_self_signed_ssl_certificate is true
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ssl/private.key"
+    common_name: "{{ web_server_ssl_common_name }}"
+    organization_name: "{{ web_server_ssl_organization }}"
+    subject_alt_name: "{{ web_server_ssl_subject_alternative_names }}"
+  register: csr
+  vars:
+    ansible_python_interpreter: "{{ ansible_facts.python_binaries_path }}/python"
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Sign certificate if web_server_enable_self_signed_ssl_certificate is true
+  community.crypto.x509_certificate_pipe:
+    csr_content: "{{ csr.csr }}"
+    provider: ownca
+    ownca_path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ca/ca-certificate.pem"
+    ownca_privatekey_path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ca/ca-certificate.key"
+  register: certificate
+  vars:
+    ansible_python_interpreter: "{{ ansible_facts.python_binaries_path }}/python"
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Store certificate
+  ansible.builtin.copy:
+    content: "{{ certificate.certificate }}"
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ssl/certificate.crt"
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+  register: nginx_certificate
+
+- name: Create fullchain.pem for Nginx
+  ansible.builtin.copy:
+    content: |
+      {{ lookup('file', '/home/' + ansible_facts.user_id + '/nginx/ssl/certificate.crt') }}
+      {{ lookup('file', '/home/' + ansible_facts.user_id + '/nginx/ca/ca-certificate.pem') }}
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ssl/fullchain.pem"
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+  register: nginx_fullchain
+
+- name: Set volumes to mount
+  ansible.builtin.set_fact:
+    nginx_volumes: "{{ ['/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/nginx.conf:{{ nginx_config_dir }}/nginx.conf', '/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/conf.d/default.conf:/etc/nginx/conf.d/default.conf'] }}"
+
+- name: Create list fact with ssl volume if web_server_enable_self_signed_ssl_certificate is true
+  ansible.builtin.set_fact:
+    ssl_volume_list: "{{ ['/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ssl:/etc/nginx/ssl'] }}"
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Add SSL volume if web_server_enable_self_signed_ssl_certificate is true
+  ansible.builtin.set_fact:
+    nginx_volumes: "{{ nginx_volumes + ssl_volume_list }}"
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+
+- name: Add any extra paths defined by the user
+  ansible.builtin.set_fact: "{{ nginx_volumes + web_server_extra_paths }}"
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ web_server_docker_network }}"
+    driver: "bridge"
+  when: web_server_docker_network is defined
+
+- name: Ensure the Nginx container is running
+  community.docker.docker_container:
+    name: nginx
+    image: nginx:stable
+    state: started
+    hostname: nginx
+    auto_remove: false
+    restart_policy: unless-stopped
+    restart: "{{ ((nginx_certificate is defined and nginx_certificate.changed) or (nginx_config is defined and nginx_config.changed) or (nginx_fullchain is defined and nginx_fullchain.changed) or (nginx_default_conf is defined and nginx_default_conf.changed)) | default(false) }}"
+    cpus: "{{ web_server_cpus }}"
+    memory: "{{ web_server_memory }}"
+    memory_swap: "{{ web_server_memory }}"
+    detach: true
+    volumes: "{{ web_server_volumes }}"
+    network_mode: "{{ web_server_docker_network | default('bridge') }}"
+    published_ports: "{{ web_server_ports | default(omit) }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: ["CMD", "curl", "-f", "http://localhost"]
+  become: true

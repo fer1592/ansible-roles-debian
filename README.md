@@ -298,6 +298,30 @@ sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials ~/.secrets/c
 | `certbot_cloudflare_api_token` | Cloudflare API Token with DNS edit permissions. **Use Ansible Vault**. | string | **(None)** | Yes |
 | `certbot_ntfy_server_topic` | URL of the ntfy server (including topic) for failure alerts. | string | **(None)** | No |
 
+### web-server
+
+This role deploys a stable **Nginx** container designed to act as a reverse proxy or primary web server. It features dynamic configuration management, support for both self-signed and external SSL certificates (like those from Certbot), and automated container restarts upon configuration changes.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the `nginx:stable` Docker image.
+* **Configuration Setup:** Creates the necessary directory structure for Nginx configuration (`conf.d`) and deploys `nginx.conf` and `default.conf` from templates.
+* **SSL Management:** * Supports automated generation of **self-signed certificates** for internal testing.
+    * Facilitates the mounting of external certificates (e.g., generated via the Certbot role).
+* **Dynamic Volumes:** Allows for the injection of extra paths and volume mappings via variables.
+* **State Management:** Automatically restarts the Nginx container if templates (configs) or certificate files are updated, ensuring changes take effect immediately.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `web_server_cpus` | CPU limit for the Nginx container. | string | **(None)** | Yes |
+| `web_server_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `web_server_ports` | List of port mappings (e.g., `["80:80", "443:443"]`). | list | `omit` | No |
+| `web_server_docker_network` | Docker network name for the container. | string | `bridge` | No |
+| `web_server_enable_self_signed_ssl_certificate` | If true, generates and configures self-signed SSL. | boolean | `false` | No |
+| `web_server_extra_paths` | List of additional volume strings to mount in the container. | list | `[]` | No |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:

@@ -21,7 +21,7 @@
   ansible.builtin.file:
     path: /home/{{ current_user }}/.secrets/certbot
     state: directory
-    mode: '0755'
+    mode: 0755
 
 - name: Ensure cloudflare.ini exists
   ansible.builtin.template:
@@ -37,7 +37,7 @@
     state: directory
     owner: root # since the nginx container is executed as root, we leave root as the owner
     group: root
-    mode: '0755'
+    mode: 0755
   become: true
 
 - name: Set ntfy notification

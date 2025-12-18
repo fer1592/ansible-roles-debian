@@ -68,7 +68,7 @@
   ansible.builtin.file:
     path: /home/{{ current_user }}/.ssh
     state: directory
-    mode: '0755'
+    mode: 0755
 
 - name: Ensure all files under ~/.ssh are owned by the user
   ansible.builtin.file:
