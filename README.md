@@ -50,16 +50,16 @@ It is recommended to define these variables in the `group_vars/all.yml` file or 
 
 | Variable | Description | Type | Default Value | Mandatory | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `common_playbook_name` | **Name of the main playbook file**. Used to name the systemd service and timer units for cron automation. | string | **(None)** | Yes | Example: server_setup.yml |
-| `common_sshd_authorized_keys` | List of public SSH keys to include in `authorized_keys`. | list | **(None)** | Yes | Example: `['ssh-rsa AAA... user1', 'ssh-ed25519 AAA... user2']` |
-| `common_sshd_disable_password_authentication`| Disables password authentication in `sshd_config`. | boolean | **(Not Defined)** | No | If set to `true`, changes `PasswordAuthentication no`. |
+| `common_playbook_name` | **Name of the main playbook file**. Used to name the systemd service and timer units for cron automation. | string | **None** | Yes | Example: server_setup.yml |
+| `common_sshd_authorized_keys` | List of public SSH keys to include in `authorized_keys`. | list | **None** | Yes | Example: `['ssh-rsa AAA... user1', 'ssh-ed25519 AAA... user2']` |
+| `common_sshd_disable_password_authentication`| Disables password authentication in `sshd_config`. | boolean | **Not Defined** | No | If set to `true`, changes `PasswordAuthentication no`. |
 | `common_extra_packages` | List of additional Debian packages to install via `apt`. | list | `[]` | No | Example: `['htop', 'tmux', 'curl']` |
 | `common_ansible_roles_debian_repo_path` | Local path of the `ansible-roles-debian` repository for the `git pull` command. | string | `.` | No | Usually the path where the playbook is executed. |
-| `common_static_ip_config` | Configuration object to set a static IP via `nmcli`. | dict | **(Not Defined)** | No | **Warning: Triggers a scheduled reboot.** Requires `type`, `conn_name`, `ip4`, `ifname`, `gw4`, and `dns4` keys. |
+| `common_static_ip_config` | Configuration object to set a static IP via `nmcli`. | dict | **Not Defined** | No | **Warning: Triggers a scheduled reboot.** Requires `type`, `conn_name`, `ip4`, `ifname`, `gw4`, and `dns4` keys. |
 | `common_avahi_enabled` | Enables the installation and service of Avahi for mDNS. | boolean | `false` | No | Installs `avahi-daemon` and `avahi-utils`. |
-| `common_avahi_publish_hostname` | Hostname to publish on the local network if Avahi is enabled. | string | **(Not Defined)** | No | Example: `my-server.local` |
-| `common_systemd_timer_oncalendar` | Expression to be used in the systemd unit that will call the playbook execution periodically. Check for examples [here](https://wiki.archlinux.org/title/Systemd/Timers). | string | **(Not Defined)** | Yes | Example: `daily`
-| `common_systemd_timer_onbootsec` | If defined, it will set the field `OnBootSec` in the `Systemd` timer unit. Allows to execute the playbook after an X ammount of time after the system boot. | string | **(Not Defined)** | No | Example: `15min` |
+| `common_avahi_publish_hostname` | Hostname to publish on the local network if Avahi is enabled. | string | **Not Defined** | No | Example: `my-server.local` |
+| `common_systemd_timer_oncalendar` | Expression to be used in the systemd unit that will call the playbook execution periodically. Check for examples [here](https://wiki.archlinux.org/title/Systemd/Timers). | string | **Not Defined** | Yes | Example: `daily`
+| `common_systemd_timer_onbootsec` | If defined, it will set the field `OnBootSec` in the `Systemd` timer unit. Allows to execute the playbook after an X ammount of time after the system boot. | string | **Not Defined** | No | Example: `15min` |
 
 ### docker-host
 
@@ -86,10 +86,10 @@ This role handles the deployment and configuration of AdGuard Home using Docker.
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `adguard_config` | Dictionary containing the AdGuard Home YAML configurations you want to include in the configuration. If you don't want to keep the configuration in the values, it's recommended to don't include this variable, and let AdGuard to manage it. | dict | **(Not Defined)** | No |
-| `adguard_ports` | List of port mappings for the Docker container (e.g., `["53:53/udp", "80:80/tcp"]`). | list | **(None)** | Yes |
-| `adguard_cpus` | CPU limit for the container. | string | **(None)** | Yes |
-| `adguard_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `adguard_config` | Dictionary containing the AdGuard Home YAML configurations you want to include in the configuration. If you don't want to keep the configuration in the values, it's recommended to don't include this variable, and let AdGuard to manage it. | dict | **Not Defined** | No |
+| `adguard_ports` | List of port mappings for the Docker container (e.g., `["53:53/udp", "80:80/tcp"]`). | list | **None** | Yes |
+| `adguard_cpus` | CPU limit for the container. | string | **None** | Yes |
+| `adguard_memory` | Memory and swap limit for the container. | string | **None** | Yes |
 | `adguard_docker_network` | Name of the Docker bridge network to create/use. | string | `bridge` | No |
 | `adguard_avahi_publish` | Enables the creation of a systemd service to publish via Avahi. | boolean | `false` | No |
 
@@ -110,12 +110,12 @@ This role manages the deployment of Home Assistant using Docker. It handles the 
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `home_assistant_config_dir` | Subdirectory path for configuration files (relative to the role's base path). | string | **(None)** | Yes |
-| `home_assistant_cpus` | CPU limit for the container. | string | **(None)** | Yes |
-| `home_assistant_memory` | Memory limit for the container. | string | **(None)** | Yes |
-| `home_assistant_devices` | List of device nodes to map into the container (e.g., `["/dev/ttyUSB0:/dev/ttyUSB0"]`). | list | **(None)** | Yes |
-| `home_assistant_timezone` | Timezone to be used by the container (e.g., `Europe/Madrid`). | string | **(None)** | Yes |
-| `home_assistant_language` | Language setting for the container environment. | string | **(None)** | Yes |
+| `home_assistant_config_dir` | Subdirectory path for configuration files (relative to the role's base path). | string | **None** | Yes |
+| `home_assistant_cpus` | CPU limit for the container. | string | **None** | Yes |
+| `home_assistant_memory` | Memory limit for the container. | string | **None** | Yes |
+| `home_assistant_devices` | List of device nodes to map into the container (e.g., `["/dev/ttyUSB0:/dev/ttyUSB0"]`). | list | **None** | Yes |
+| `home_assistant_timezone` | Timezone to be used by the container (e.g., `Europe/Madrid`). | string | **None** | Yes |
+| `home_assistant_language` | Language setting for the container environment. | string | **None** | Yes |
 | `home_assistant_avahi_publish` | Enables the creation of a systemd service to publish via Avahi. | boolean | `false` | No |
 
 ### vaultwarden
@@ -155,13 +155,13 @@ ansible-vault encrypt_string $secured_token --name vaultwarden_admin_token --vau
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `vaultwarden_cpus` | CPU limit for the container. | string | **(None)** | Yes |
-| `vaultwarden_memory` | Memory and swap limit. | string | **(None)** | Yes |
-| `vaultwarden_admin_token` | Admin token (plain or hashed). **Use Ansible Vault.** | string | **(None)** | Yes |
-| `vaultwarden_port` | Internal port for the Rocket server. | string | **(None)** | Yes |
-| `vaultwarden_ports` | List of port mappings for the Docker container (e.g., `["80:80/tcp"]`). | list | **(None)** | Yes |
-| `vaultwarden_signups_allowed` | Whether to allow new user registrations. | boolean | **(None)** | Yes |
-| `vaultwarden_invitations_allowed` | Whether to allow users to invite others. | boolean | **(None)** | Yes |
+| `vaultwarden_cpus` | CPU limit for the container. | string | **None** | Yes |
+| `vaultwarden_memory` | Memory and swap limit. | string | **None** | Yes |
+| `vaultwarden_admin_token` | Admin token (plain or hashed). **Use Ansible Vault.** | string | **None** | Yes |
+| `vaultwarden_port` | Internal port for the Rocket server. | string | **None** | Yes |
+| `vaultwarden_ports` | List of port mappings for the Docker container (e.g., `["80:80/tcp"]`). | list | **None** | Yes |
+| `vaultwarden_signups_allowed` | Whether to allow new user registrations. | boolean | **None** | Yes |
+| `vaultwarden_invitations_allowed` | Whether to allow users to invite others. | boolean | **None** | Yes |
 | `vaultwarden_docker_network` | Name of the Docker network to use. | string | `bridge` | No |
 | `vaultwarden_avahi_publish` | Enables publishing via Avahi. | boolean | `false` | No |
 
@@ -182,9 +182,9 @@ This role manages the deployment of **ntfy**, a simple HTTP-based pub-sub notifi
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `ntfy_cpus` | CPU limit for the ntfy container. | string | **(None)** | Yes |
-| `ntfy_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
-| `ntfy_env_vars` | Dictionary of environment variables for ntfy configuration. | dict | **(None)** | Yes |
+| `ntfy_cpus` | CPU limit for the ntfy container. | string | **None** | Yes |
+| `ntfy_memory` | Memory and swap limit for the container. | string | **None** | Yes |
+| `ntfy_env_vars` | Dictionary of environment variables for ntfy configuration. | dict | **None** | Yes |
 | `ntfy_ports` | List of port mappings for the container. | list | `omit` | No |
 | `ntfy_docker_network` | Docker network name to attach the container to. | string | `bridge` | No |
 | `ntfy_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
@@ -205,9 +205,9 @@ This role manages the deployment of **n8n**, an extendable workflow automation t
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `n8n_cpus` | CPU limit for the n8n container. | string | **(None)** | Yes |
-| `n8n_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
-| `n8n_env_vars` | Dictionary of environment variables for n8n configuration. | dict | **(None)** | Yes |
+| `n8n_cpus` | CPU limit for the n8n container. | string | **None** | Yes |
+| `n8n_memory` | Memory and swap limit for the container. | string | **None** | Yes |
+| `n8n_env_vars` | Dictionary of environment variables for n8n configuration. | dict | **None** | Yes |
 | `n8n_ports` | List of port mappings for the container. | list | `omit` | No |
 | `n8n_docker_network` | Docker network name for the container. | string | `bridge` | No |
 | `n8n_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
@@ -238,10 +238,10 @@ ansible-vault encrypt_string '<your-refresh-token>' --name twingate_connector_re
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `twingate_connector_cpus` | CPU limit for the connector container. | string | **(None)** | Yes |
-| `twingate_connector_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
-| `twingate_connector_access_token` | Twingate Access Token. **Use Ansible Vault**. | string | **(None)** | Yes |
-| `twingate_connector_refresh_token` | Twingate Refresh Token. **Use Ansible Vault**. | string | **(None)** | Yes |
+| `twingate_connector_cpus` | CPU limit for the connector container. | string | **None** | Yes |
+| `twingate_connector_memory` | Memory and swap limit for the container. | string | **None** | Yes |
+| `twingate_connector_access_token` | Twingate Access Token. **Use Ansible Vault**. | string | **None** | Yes |
+| `twingate_connector_refresh_token` | Twingate Refresh Token. **Use Ansible Vault**. | string | **None** | Yes |
 | `twingate_connector_dns_server` | Custom DNS server for the connector to use. | string | `omit` | No |
 | `twingate_connector_docker_network` | Docker network name to attach the container to. | string | `bridge` | No |
 
@@ -295,8 +295,8 @@ sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials ~/.secrets/c
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `certbot_cloudflare_api_token` | Cloudflare API Token with DNS edit permissions. **Use Ansible Vault**. | string | **(None)** | Yes |
-| `certbot_ntfy_server_topic` | URL of the ntfy server (including topic) for failure alerts. | string | **(None)** | No |
+| `certbot_cloudflare_api_token` | Cloudflare API Token with DNS edit permissions. **Use Ansible Vault**. | string | **None** | Yes |
+| `certbot_ntfy_server_topic` | URL of the ntfy server (including topic) for failure alerts. | string | **None** | No |
 
 ### web-server
 
@@ -315,8 +315,9 @@ This role deploys a stable **Nginx** container designed to act as a reverse prox
 
 | Variable | Description | Type | Default Value | Mandatory |
 | :--- | :--- | :--- | :--- | :--- |
-| `web_server_cpus` | CPU limit for the Nginx container. | string | **(None)** | Yes |
-| `web_server_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `web_server_config_dir` | Directory where the config will be mounted. | string | **None** | Yes |
+| `web_server_cpus` | CPU limit for the Nginx container. | string | **None** | Yes |
+| `web_server_memory` | Memory and swap limit for the container. | string | **None** | Yes |
 | `web_server_ports` | List of port mappings (e.g., `["80:80", "443:443"]`). | list | `omit` | No |
 | `web_server_docker_network` | Docker network name for the container. | string | `bridge` | No |
 | `web_server_enable_self_signed_ssl_certificate` | If true, generates and configures self-signed SSL. | boolean | `false` | No |
