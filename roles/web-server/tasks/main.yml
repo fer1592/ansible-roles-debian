@@ -167,7 +167,7 @@
 - name: Set volumes to mount
   ansible.builtin.set_fact:
     nginx_volumes:
-    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/nginx.conf:{{ nginx_config_dir }}/nginx.conf"
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/nginx.conf:{{ web_server_config_dir }}/nginx.conf"
     - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/conf.d/default.conf:/etc/nginx/conf.d/default.conf"
 
 - name: Create list fact with ssl volume if web_server_enable_self_signed_ssl_certificate is true
