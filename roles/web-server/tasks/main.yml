@@ -182,7 +182,9 @@
   when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
 
 - name: Add any extra paths defined by the user
-  ansible.builtin.set_fact: "{{ nginx_volumes + web_server_extra_paths }}"
+  ansible.builtin.set_fact:
+    nginx_volumes: "{{ nginx_volumes + web_server_extra_paths }}"
+  when: web_server_extra_paths is defined
 
 - name: Ensure the docker network exists if defined
   community.docker.docker_network:
