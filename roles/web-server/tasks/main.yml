@@ -200,7 +200,7 @@
     memory: "{{ web_server_memory }}"
     memory_swap: "{{ web_server_memory }}"
     detach: true
-    volumes: "{{ web_server_volumes }}"
+    volumes: "{{ nginx_volumes }}"
     network_mode: "{{ web_server_docker_network | default('bridge') }}"
     published_ports: "{{ web_server_ports | default(omit) }}"
     log_driver: json-file
