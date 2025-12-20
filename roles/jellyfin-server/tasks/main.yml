@@ -65,7 +65,7 @@
     - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-config:/config:rw"
     - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-cache:/cache:rw"
     mounts:
-      type: "bind"
+    - type: "bind"
       source: "/home/{{ ansible_facts.user_id }}/Jellyfin Server Media"
       target: "/media"
     env: "{{ jellyfin_env_vars | default(omit) }}"

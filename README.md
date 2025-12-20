@@ -327,7 +327,7 @@ Once deployed, OpenCloud will generate a random admin password. You can get it f
 cat ~/ansible-roles-debian-data/opencloud/opencloud-config/opencloud.yaml | grep 'admin_password'
 ```
 
-### Jellyfin
+### jellyfin-server
 
 This role manages the deployment of **Jellyfin**, an open-source media server, using Docker. It handles persistent storage for configuration and cache, manages hardware acceleration devices, and supports local network discovery via Avahi. At the moment this role just **supports enabling hardware acceleration for AMD GPUs** because... life. If you wish to add support for other GPUs, feel free to contribute!
 
