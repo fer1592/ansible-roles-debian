@@ -1,0 +1,86 @@
+---
+- name: Pull the latest opencloud image
+  community.docker.docker_image_pull:
+    name: opencloudeu/opencloud-rolling
+    tag: latest
+    pull: always
+  become: true
+
+- name: Ensure the opencloud config directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: 0755
+  become: true
+
+- name: Ensure the opencloud data directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-data"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    mode: 0755
+  become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ opencloud_docker_network }}"
+    driver: "bridge"
+  when: opencloud_docker_network is defined
+
+- name: Ensure the opencloud container is running
+  community.docker.docker_container:
+    name: opencloud
+    image: opencloudeu/opencloud-rolling:latest
+    state: started
+    hostname: opencloud
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ opencloud_cpus }}"
+    memory: "{{ opencloud_memory }}"
+    memory_swap: "{{ opencloud_memory }}"
+    detach: true
+    network_mode: "{{ opencloud_docker_network | default('bridge') }}"
+    published_ports: "{{ opencloud_ports | default(omit) }}"
+    #healthcheck:
+    #  test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:8090/v1/health -O - | grep -Eo '\"healthy\":true' > /dev/null || exit 1"]
+    #  interval: 60s
+    #  timeout: 10s
+    #  retries: 3
+    #  start_period: 40s
+    user: "1000:1000"
+    volumes:
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config:/etc/opencloud:rw"
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-data:/var/lib/opencloud:rw"
+    env: "{{ opencloud_env_vars }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
+  when: opencloud_avahi_publish is defined and opencloud_avahi_publish
+
+- name: Ensure the opencloud avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-opencloud.service"
+    mode: 0644
+    owner: root
+  become: true
+  register: opencloud_avahi_publish_service
+  when: opencloud_avahi_publish is defined and opencloud_avahi_publish and avahi_daemon_running
+
+- name: Ensure the opencloud avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-opencloud.service
+    state: "{{ 'restarted' if opencloud_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ opencloud_avahi_publish_service.changed }}"
+  become: true
+  when: opencloud_avahi_publish is defined and  opencloud_avahi_publish and avahi_daemon_running

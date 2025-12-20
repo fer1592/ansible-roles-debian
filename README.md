@@ -298,6 +298,27 @@ sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials ~/.secrets/c
 | `certbot_cloudflare_api_token` | Cloudflare API Token with DNS edit permissions. **Use Ansible Vault**. | string | **None** | Yes |
 | `certbot_ntfy_server_topic` | URL of the ntfy server (including topic) for failure alerts. | string | **None** | No |
 
+### OpenCloud
+
+This role deploys **OpenCloud**, a lightweight fork of ownCloud that does not require an external database.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest `opencloudeu/opencloud-rolling` image.
+* **Directory Management:** Creates persistent storage folders for configuration and user data, ensuring correct ownership (UID/GID 1000).
+* **Container Management:** Deploys the container with CPU/Memory limits and integrates it into the specified Docker network.
+* **Local Discovery:** If enabled, it configures a Systemd service to publish the OpenCloud instance via Avahi (mDNS), allowing access via `opencloud.local`.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `opencloud_cpus` | CPU resource limit for the container. | string | **(None)** | Yes |
+| `opencloud_memory` | Memory and swap limit for the container. | string | **(None)** | Yes |
+| `opencloud_docker_network` | Docker network name to attach the container. | string | `bridge` | No |
+| `opencloud_env_vars` | Dictionary of environment variables. **Sensitive values (passwords) should be stored in Ansible Vault.** | dict | `{}` | No |
+| `opencloud_avahi_publish` | Whether to publish the service via mDNS. | boolean | `false` | No |
+
 ### web-server
 
 This role deploys a stable **Nginx** container designed to act as a reverse proxy or primary web server. It features dynamic configuration management, support for both self-signed and external SSL certificates (like those from Certbot), and automated container restarts upon configuration changes.
