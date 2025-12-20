@@ -10,8 +10,8 @@
   ansible.builtin.file:
     path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config"
     state: directory
-    owner: "1000"
-    group: "1000"
+    owner: 1000
+    group: 1000
     mode: 0755
   become: true
 
@@ -19,8 +19,8 @@
   ansible.builtin.file:
     path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-data"
     state: directory
-    owner: "1000"
-    group: "1000"
+    owner: 1000
+    group: 1000
     mode: 0755
   become: true
 
