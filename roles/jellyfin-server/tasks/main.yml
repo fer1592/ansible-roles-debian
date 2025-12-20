@@ -10,8 +10,8 @@
   ansible.builtin.file:
     path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-config"
     state: directory
-    owner: "{{ ansible_facts.user_id }}"
-    group: "{{ ansible_facts.user_id }}"
+    owner: "{{ ansible_facts.current_user_uid }}"
+    group: "{{ ansible_facts.current_user_uid }}"
     mode: 0755
   become: true
 
@@ -19,8 +19,8 @@
   ansible.builtin.file:
     path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-cache"
     state: directory
-    owner: "{{ ansible_facts.user_id }}"
-    group: "{{ ansible_facts.user_id }}"
+    owner: "{{ ansible_facts.current_user_uid }}"
+    group: "{{ ansible_facts.current_user_uid }}"
     mode: 0755
   become: true
 
@@ -28,8 +28,8 @@
   ansible.builtin.file:
     path: "{{ jellyfin_media_path }}"
     state: directory
-    owner: "{{ ansible_facts.user_id }}"
-    group: "{{ ansible_facts.user_id }}"
+    owner: "{{ ansible_facts.current_user_uid }}"
+    group: "{{ ansible_facts.current_user_uid }}"
     mode: 0755
 
 - name: Ensure the docker network exists if defined
@@ -59,7 +59,7 @@
       retries: 3
       start_period: 60s
     groups: "{{ jellyfin_groups | default(omit) }}"
-    user: "{{ ansible_facts.user_id }}:{{ ansible_facts.user_id }}"
+    user: "{{ ansible_facts.current_user_uid }}:{{ ansible_facts.current_user_uid }}"
     devices: "{{ jellyfin_devices | default(omit) }}"
     volumes:
     - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-config:/config:rw"
