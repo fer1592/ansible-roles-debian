@@ -6,6 +6,15 @@
     pull: always
   become: true
 
+- name: Ensure the opencloud directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud"
+    state: directory
+    owner: 1000
+    group: 1000
+    mode: 0755
+  become: true
+
 - name: Ensure the opencloud config directory is present
   ansible.builtin.file:
     path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config"
@@ -29,6 +38,32 @@
     name: "{{ opencloud_docker_network }}"
     driver: "bridge"
   when: opencloud_docker_network is defined
+
+- name: Check if opencloud was initialized before
+  ansible.builtin.stat:
+    path: /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config/opencloud.yaml
+  register: opencloud-config-file
+
+- name: Initialize opencloud
+  community.docker.docker_container:
+    name: opencloud-init
+    image: opencloudeu/opencloud-rolling:latest
+    state: started
+    hostname: opencloud-init
+    auto_remove: true
+    detach: false
+    user: "1000:1000"
+    volumes:
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config:/etc/opencloud:rw"
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-data:/var/lib/opencloud:rw"
+    env: "{{ opencloud_env_vars }}"
+    command: "init"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+  when: opencloud-config-file.stat.isreg is not defined
 
 - name: Ensure the opencloud container is running
   community.docker.docker_container:
