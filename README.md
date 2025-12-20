@@ -319,6 +319,41 @@ This role deploys **OpenCloud**, a lightweight fork of ownCloud that does not re
 | `opencloud_env_vars` | Dictionary of environment variables. **Sensitive values (passwords) should be stored in Ansible Vault.** | dict | `{}` | No |
 | `opencloud_avahi_publish` | Whether to publish the service via mDNS. | boolean | `false` | No |
 
+#### Access
+
+Once deployed, OpenCloud will generate a random admin password. You can get it for your first login by running:
+
+```bash
+cat ~/ansible-roles-debian-data/opencloud/opencloud-config/opencloud.yaml | grep 'admin_password'
+```
+
+### Jellyfin
+
+This role manages the deployment of **Jellyfin**, an open-source media server, using Docker. It handles persistent storage for configuration and cache, manages hardware acceleration devices, and supports local network discovery via Avahi. At the moment this role just **supports enabling hardware acceleration for AMD GPUs** because... life. If you wish to add support for other GPUs, feel free to contribute!
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest `ghcr.io/jellyfin/jellyfin` Docker image.
+* **Directory Structure:** Creates persistent directories for configuration, cache, and media within the user's data folder.
+* **Container Management:** Runs the Jellyfin container with specified CPU and memory limits, custom port mappings, and persistent volume mounts.
+* **Hardware Support:** Maps specified host GPU devices and adds the necessary system groups (e.g., `render`) to enable hardware-accelerated transcoding.
+* **Health Monitoring:** Implements a healthcheck to ensure the Jellyfin web interface is responsive.
+* **Avahi Integration (Optional):** If enabled and the `avahi-daemon` is running, it creates a systemd service to publish Jellyfin on the local network for mDNS discovery.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `jellyfin_media_path` | Path where your media folder will be created. This won't be created with root priviledges, so using a folder inside your home dir is recommended. | string | **None** | Yes |
+| `jellyfin_cpus` | CPU limit for the Jellyfin container. | string | **None** | Yes |
+| `jellyfin_memory` | Memory and swap limit for the container. | string | **None** | Yes |
+| `jellyfin_ports` | List of port mappings for the container (e.g., `["8096:8096"]`). | list | `omit` | No |
+| `jellyfin_devices` | List of device nodes to map (e.g., `["/dev/dri/renderD128:/dev/dri/renderD128"]`). | list | `omit` | No |
+| `jellyfin_groups` | List of additional group IDs for the container user (e.g., the `render` group ID). | list | `omit` | No |
+| `jellyfin_docker_network` | Name of the Docker network to use. | string | `bridge` | No |
+| `jellyfin_env_vars` | Dictionary of environment variables for configuration. | dict | `omit` | No |
+| `jellyfin_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
+
 ### web-server
 
 This role deploys a stable **Nginx** container designed to act as a reverse proxy or primary web server. It features dynamic configuration management, support for both self-signed and external SSL certificates (like those from Certbot), and automated container restarts upon configuration changes.

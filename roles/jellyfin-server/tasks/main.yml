@@ -1,0 +1,100 @@
+---
+- name: Pull the latest jellyfin image
+  community.docker.docker_image_pull:
+    name: ghcr.io/jellyfin/jellyfin
+    tag: latest
+    pull: always
+  become: true
+
+- name: Ensure the jellyfin config directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-config"
+    state: directory
+    owner: "{{ ansible_facts.user_id }}"
+    group: "{{ ansible_facts.user_id }}"
+    mode: 0755
+  become: true
+
+- name: Ensure the jellyfin cache directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-cache"
+    state: directory
+    owner: "{{ ansible_facts.user_id }}"
+    group: "{{ ansible_facts.user_id }}"
+    mode: 0755
+  become: true
+
+- name: Ensure the media folder exists
+  ansible.builtin.file:
+    path: "{{ jellyfin_media_path }}"
+    state: directory
+    owner: "{{ ansible_facts.user_id }}"
+    group: "{{ ansible_facts.user_id }}"
+    mode: 0755
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ jellyfin_docker_network }}"
+    driver: "bridge"
+  when: jellyfin_docker_network is defined
+
+- name: Ensure the jellyfin container is running
+  community.docker.docker_container:
+    name: jellyfin
+    image: ghcr.io/jellyfin/jellyfin:latest
+    state: started
+    hostname: jellyfin
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ jellyfin_cpus }}"
+    memory: "{{ jellyfin_memory }}"
+    memory_swap: "{{ jellyfin_memory }}"
+    detach: true
+    network_mode: "{{ jellyfin_docker_network | default('bridge') }}"
+    published_ports: "{{ jellyfin_ports | default(omit) }}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    groups: "{{ jellyfin_groups | default(omit) }}"
+    user: "{{ ansible_facts.user_id }}:{{ ansible_facts.user_id }}"
+    devices: "{{ jellyfin_devices | default(omit) }}"
+    volumes:
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-config:/config:rw"
+    - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/jellyfin/jellyfin-cache:/cache:rw"
+    mounts:
+      type: "bind"
+      source: "/home/{{ ansible_facts.user_id }}/Jellyfin Server Media"
+      target: "/media"
+    env: "{{ jellyfin_env_vars | default(omit) }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
+  when: jellyfin_avahi_publish is defined and jellyfin_avahi_publish
+
+- name: Ensure the jellyfin avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-jellyfin.service"
+    mode: 0644
+    owner: root
+  become: true
+  register: jellyfin_avahi_publish_service
+  when: jellyfin_avahi_publish is defined and jellyfin_avahi_publish and avahi_daemon_running
+
+- name: Ensure the jellyfin avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-jellyfin.service
+    state: "{{ 'restarted' if jellyfin_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ jellyfin_avahi_publish_service.changed }}"
+  become: true
+  when: jellyfin_avahi_publish is defined and  jellyfin_avahi_publish and avahi_daemon_running
