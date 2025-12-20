@@ -1,0 +1,34 @@
+---
+- name: Pull the xmrig image
+  community.docker.docker_image_pull:
+    name: "{{ xmrig_image }}"
+    tag: "{{ xmrig_tag }}"
+    pull: always
+  become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ xmrig_docker_network }}"
+    driver: "bridge"
+  when: xmrig_docker_network is defined
+
+- name: Ensure the xmrig container is running
+  community.docker.docker_container:
+    name: xmrig
+    image: "{{ xmrig_image }}:{{ xmrig_tag }}"
+    state: started
+    hostname: xmrig
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ xmrig_cpus }}"
+    memory: "{{ xmrig_memory }}"
+    memory_swap: "{{ xmrig_memory }}"
+    network_mode: "{{ xmrig_docker_network | default('bridge') }}"
+    command: "{{ xmrig_command | default(omit) }}"
+    user: "{{ xmrig_user | default(omit) }}"
+    detach: true
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true

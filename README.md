@@ -354,6 +354,30 @@ This role manages the deployment of **Jellyfin**, an open-source media server, u
 | `jellyfin_env_vars` | Dictionary of environment variables for configuration. | dict | `omit` | No |
 | `jellyfin_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
 
+### xmrig
+
+This role handles the deployment of the **XMRig** miner using Docker. It is designed to run as a background service with specific resource constraints to balance mining performance and system stability.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the specified XMRig Docker image (e.g., `linuxserver/xmrig`).
+* **Network Management:** Ensures the defined Docker network exists for the container to join.
+* **Container Management:** Runs the XMRig container with defined CPU and memory limits, ensuring it restarts automatically unless stopped manually.
+* **Resource Optimization:** Configures memory and swap limits to be identical to prevent performance degradation from disk swapping.
+* **Log Management:** Sets specific log rotation policies (max 3 files of 50MB) to prevent the container from consuming excessive disk space.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `xmrig_image` | Docker image name for XMRig. | string | **None** | Yes |
+| `xmrig_tag` | Specific image tag to use. | string | **None** | Yes |
+| `xmrig_cpus` | CPU resource limit for the container. | string | **None** | Yes |
+| `xmrig_memory` | Memory limit for the container. | string | **None** | Yes |
+| `xmrig_command` | Execution command including pool URL and wallet address. | string | `omit` | No |
+| `xmrig_docker_network` | Docker network name to attach the container. | string | `bridge` | No |
+| `xmrig_user` | User/UID to run the container as. | string | `omit` | No |
+
 ### web-server
 
 This role deploys a stable **Nginx** container designed to act as a reverse proxy or primary web server. It features dynamic configuration management, support for both self-signed and external SSL certificates (like those from Certbot), and automated container restarts upon configuration changes.
