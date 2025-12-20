@@ -42,7 +42,7 @@
 - name: Check if opencloud was initialized before
   ansible.builtin.stat:
     path: /home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config/opencloud.yaml
-  register: opencloud-config-file
+  register: opencloud_config_file
 
 - name: Initialize opencloud
   community.docker.docker_container:
@@ -63,7 +63,7 @@
       max-size: 50m
       max-file: "3"
   become: true
-  when: opencloud-config-file.stat.isreg is not defined
+  when: opencloud_config_file.stat.isreg is not defined
 
 - name: Ensure the opencloud container is running
   community.docker.docker_container:
