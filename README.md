@@ -327,6 +327,29 @@ Once deployed, OpenCloud will generate a random admin password. You can get it f
 cat ~/ansible-roles-debian-data/opencloud/opencloud-config/opencloud.yaml | grep 'admin_password'
 ```
 
+### Collabora Online (CODE)
+
+This role manages the deployment of **Collabora Online (CODE)** using Docker. It provides a powerful online office suite that can be integrated with services like Nextcloud or OpenCloud.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest stable `collabora/code` Docker image.
+* **Network Management:** Ensures the specified Docker network exists for the container.
+* **Container Management:** Runs the Collabora container with defined CPU and memory limits, persistent restart policies, and custom environment variables.
+* **Log Management:** Configures log rotation (max 3 files of 50MB) to preserve host disk space.
+* **Avahi Integration (Optional):** If enabled and the `avahi-daemon` is active, it creates a systemd service to publish the Collabora instance on the local network via mDNS.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `collabora_code_cpus` | CPU limit for the container. | string | **None** | Yes |
+| `collabora_code_memory` | Memory and swap limit for the container. | string | **None** | Yes |
+| `collabora_code_env_vars` | Dictionary of environment variables (e.g., `domain`, `username`, `password`). | dict | **None** | Yes |
+| `collabora_code_ports` | List of port mappings for the container (e.g., `["9980:9980"]`). | list | `omit` | No |
+| `collabora_code_docker_network` | Docker network name for the container. | string | `bridge` | No |
+| `collabora_code_avahi_publish` | Enables mDNS publishing via an Avahi systemd service. | boolean | `false` | No |
+
 ### jellyfin-server
 
 This role manages the deployment of **Jellyfin**, an open-source media server, using Docker. It handles persistent storage for configuration and cache, manages hardware acceleration devices, and supports local network discovery via Avahi. At the moment this role just **supports enabling hardware acceleration for AMD GPUs** because... life. If you wish to add support for other GPUs, feel free to contribute!
