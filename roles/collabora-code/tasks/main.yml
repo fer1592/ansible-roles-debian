@@ -32,6 +32,7 @@
     - SYS_ADMIN
     - FOWNER
     - CHOWN
+    - MKNOD
     cap_drop:
     - all
     log_driver: json-file
