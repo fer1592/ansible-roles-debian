@@ -27,6 +27,13 @@
     detach: true
     published_ports: "{{ collabora_code_ports | default(omit) }}"
     env: "{{ collabora_code_env_vars }}"
+    capabilities:
+    - SYS_CHROOT
+    - SYS_ADMIN
+    - FOWNER
+    - CHOWN
+    cap_drop:
+    - all
     log_driver: json-file
     log_options:
       max-size: 50m
