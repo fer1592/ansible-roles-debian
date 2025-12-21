@@ -24,6 +24,17 @@
     mode: 0755
   become: true
 
+- name: Ensure the csp.yaml file exists if opencloud_csp_config_block is defined
+  ansible.builtin.template:
+    src: csp.yml.j2
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config/csp.yml"
+    owner: 1000
+    group: 1000
+    mode: 0644
+  become: true
+  register: csp_config
+  when: opencloud_csp_config_block is defined
+
 - name: Ensure the docker network exists if defined
   community.docker.docker_network:
     name: "{{ opencloud_docker_network }}"
@@ -44,6 +55,7 @@
     auto_remove: true
     detach: false
     user: "1000:1000"
+    restart: "{{ csp_config.changed | default(false) }}"
     volumes:
     - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config:/etc/opencloud:rw"
     - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-data:/var/lib/opencloud:rw"
