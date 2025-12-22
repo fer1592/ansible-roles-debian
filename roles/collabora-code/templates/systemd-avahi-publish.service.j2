@@ -1,9 +1,0 @@
-[Unit]
-Description=Avahi publish collabora record
-
-[Service]
-ExecStart=/usr/bin/avahi-publish -a -R collabora.local {{ (static_ip_config.ip4.split('/')[0] if static_ip_config is defined and static_ip_config.ip4 is defined else hostvars['localhost']['ansible_default_ipv4']['address']) }}
-User=root
-
-[Install]
-WantedBy=multi-user.target
