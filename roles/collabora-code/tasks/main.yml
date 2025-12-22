@@ -26,7 +26,7 @@
     network_mode: "{{ collabora_code_docker_network | default('bridge') }}"
     detach: true
     published_ports: "{{ collabora_code_ports | default(omit) }}"
-    env: "{{ collabora_code_env_vars | combine({'aliasgroup1': collabora_alias_regex}) }}"
+    env: "{{ collabora_code_env_vars }}"
     capabilities:
     - SYS_CHROOT
     - SYS_ADMIN
