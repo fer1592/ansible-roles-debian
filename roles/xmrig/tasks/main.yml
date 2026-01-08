@@ -26,6 +26,7 @@
     network_mode: "{{ xmrig_docker_network | default('bridge') }}"
     command: "{{ xmrig_command | default(omit) }}"
     user: "{{ xmrig_user | default(omit) }}"
+    privileged: true
     detach: true
     log_driver: json-file
     log_options:
