@@ -41,6 +41,7 @@ The `Common` role executes the following actions on the system:
     * Creates and enables a `systemd` timer unit (`.timer`) to periodically execute the service unit (simulating a Cron job).
 * **Network Configuration (Optional):**
     * Allows configuration of a static IP address using `nmcli` if `common_static_ip_config` is defined. **If the static IP is applied, a system reboot is scheduled in 3 minutes**.
+    * Allows to enable WoL (Wake on Lan) if `common_static_ip_config.enable_wol` is defined (true/false)
 * **Hostname Publishing (Optional):**
     * If Avahi is enabled, it creates and manages a `systemd` service to publish a specific hostname (`common_avahi_publish_hostname`) using `avahi-publish`.
 
@@ -55,7 +56,7 @@ It is recommended to define these variables in the `group_vars/all.yml` file or 
 | `common_sshd_disable_password_authentication`| Disables password authentication in `sshd_config`. | boolean | **Not Defined** | No | If set to `true`, changes `PasswordAuthentication no`. |
 | `common_extra_packages` | List of additional Debian packages to install via `apt`. | list | `[]` | No | Example: `['htop', 'tmux', 'curl']` |
 | `common_ansible_roles_debian_repo_path` | Local path of the `ansible-roles-debian` repository for the `git pull` command. | string | `.` | No | Usually the path where the playbook is executed. |
-| `common_static_ip_config` | Configuration object to set a static IP via `nmcli`. | dict | **Not Defined** | No | **Warning: Triggers a scheduled reboot.** Requires `type`, `conn_name`, `ip4`, `ifname`, `gw4`, and `dns4` keys. |
+| `common_static_ip_config` | Configuration object to set a static IP via `nmcli`. | dict | **Not Defined** | No | **Warning: Triggers a scheduled reboot.** Requires `type`, `conn_name`, `ip4`, `ifname`, `gw4`, and `dns4` keys. `enable_wol` is optional |
 | `common_avahi_enabled` | Enables the installation and service of Avahi for mDNS. | boolean | `false` | No | Installs `avahi-daemon` and `avahi-utils`. |
 | `common_avahi_publish_hostname` | Hostname to publish on the local network if Avahi is enabled. | string | **Not Defined** | No | Example: `my-server.local` |
 | `common_systemd_timer_oncalendar` | Expression to be used in the systemd unit that will call the playbook execution periodically. Check for examples [here](https://wiki.archlinux.org/title/Systemd/Timers). | string | **Not Defined** | Yes | Example: `daily`
