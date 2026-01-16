@@ -39,6 +39,7 @@
     - gpg
     - libaugeas-dev
     - gcc
+    - ethtool
   become: true
 
 - name: Ensure avahi is installed if enabled
@@ -249,3 +250,7 @@
     daemon_reload: "{{ avahi_publish_service.changed }}"
   become: true
   when: avahi_enabled and common_avahi_publish_hostname is defined
+
+- name: Ensure WOL is set if enabled
+  ansible.builtin.shell: "ethtool -s {{ common_static_ip_config.ifname }} wol g"
+  when: common_static_ip_config.enable_wol is defined and enable_wol
