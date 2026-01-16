@@ -253,4 +253,4 @@
 
 - name: Ensure WOL is set if enabled
   ansible.builtin.shell: "ethtool -s {{ common_static_ip_config.ifname }} wol g"
-  when: common_static_ip_config is defined and common_static_ip_config.enable_wol is defined and enable_wol
+  when: common_static_ip_config is defined and common_static_ip_config.enable_wol is defined and common_static_ip_config.enable_wol
