@@ -10,6 +10,7 @@
   community.docker.docker_network:
     name: "{{ twingate_connector_docker_network }}"
     driver: "bridge"
+    enable_ipv6: true
   when: twingate_connector_docker_network is defined
 
 - name: Ensure the Twingate Connector container is running
