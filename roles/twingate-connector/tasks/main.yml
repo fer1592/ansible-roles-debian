@@ -34,6 +34,8 @@
       TWINGATE_LABEL_HOSTNAME: "`hostname`"
       TWINGATE_LABEL_DEPLOYED_BY: "docker"
       TWINGATE_DNS: "{{ twingate_connector_dns_server | default(omit) }}"
+    dns_servers:
+    - "{{ twingate_connector_dns_server | default('8.8.8.8') }}"
     log_driver: json-file
     log_options:
       max-size: 50m
