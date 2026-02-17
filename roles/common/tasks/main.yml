@@ -40,6 +40,7 @@
     - libaugeas-dev
     - gcc
     - ethtool
+    - btrfs-progs
   become: true
 
 - name: Ensure avahi is installed if enabled
