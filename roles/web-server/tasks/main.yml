@@ -200,7 +200,7 @@
     hostname: nginx
     auto_remove: false
     restart_policy: unless-stopped
-    restart: "{{ ((nginx_certificate is defined and nginx_certificate.changed) or (nginx_config is defined and nginx_config.changed) or (nginx_fullchain is defined and nginx_fullchain.changed) or (nginx_default_conf is defined and nginx_default_conf.changed)) | default(false) }}"
+    restart: true
     cpus: "{{ web_server_cpus }}"
     memory: "{{ web_server_memory }}"
     memory_swap: "{{ web_server_memory }}"
