@@ -319,6 +319,7 @@ This role deploys **OpenCloud**, a lightweight fork of ownCloud that does not re
 | `opencloud_docker_network` | Docker network name to attach the container. | string | `bridge` | No |
 | `opencloud_env_vars` | Dictionary of environment variables. **Sensitive values (passwords) should be stored in Ansible Vault.** | dict | `{}` | No |
 | `opencloud_avahi_publish` | Whether to publish the service via mDNS. | boolean | `false` | No |
+| `openclaw_allow_origins` | List of allowed origins. Recommended values: `["http://127.0.0.1:18789", "http://localhost:18789", <your domain with http and https>] | list | **(None)** | yes |
 
 #### Access
 
