@@ -404,6 +404,45 @@ This role deploys a stable **Nginx** container designed to act as a reverse prox
 | `web_server_enable_self_signed_ssl_certificate` | If true, generates and configures self-signed SSL. | boolean | `false` | No |
 | `web_server_extra_paths` | List of additional volume strings to mount in the container. | list | `[]` | No |
 
+### openclaw
+
+This role manages the deployment of **Openclaw**, a self-hosted gateway that connects your favorite chat apps — WhatsApp, Telegram, Discord, iMessage, and more — to AI coding agents, using Docker.
+
+#### Performed Tasks
+
+* **Image Management:** Pulls the latest `ghcr.io/openclaw/openclaw` Docker image.
+* **Directory Structure:** Creates persistent directories for configuration and workdir folder.
+* **Container Management:** Runs the openclaw-gateway container with specified CPU and memory limits, custom port mappings, and persistent volume mounts.
+* **Health Monitoring:** Implements a healthcheck to ensure the openclaw-gateway web interface is responsive.
+* **Avahi Integration (Optional):** If enabled and the `avahi-daemon` is running, it creates a systemd service to publish openclaw on the local network for mDNS discovery.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `openclaw_docker_network` | Docker network name for the container. | string | `bridge` | No |
+| `openclaw_gateway_cpus` | CPU limit for the openclaw-gateway container. | string | **None** | Yes |
+| `openclaw_gateway_memory` | Memory and swap limit for the container. | string | **None** | Yes |
+| `openclaw_gateway_ports` | List of port mappings for the container (e.g., `["8096:8096"]`). | list | `omit` | No |
+| `openclaw_gateway_env_vars` | List of device nodes to map (e.g., `["/dev/dri/renderD128:/dev/dri/renderD128"]`). | list | `omit` | No |
+
+ansible-vault encrypt_string $$openclaw_gateway_env_secrets --name openclaw_gateway_env_secrets --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
+
+#### Openclaw-gateway Token Generation
+
+Openclaw-gateway requires a secure `TOKEN`. To generate one and store it securely:
+1. Generate a random string: `openssl rand -hex 32`
+
+```bash
+openclaw_gateway_env_secrets=$(openssl rand -hex 32)
+```
+
+2. Save the result in your encrypted vault file (see [**Ansible Vault Setup**](#ansible-vault-setup) below).
+
+```bash
+ansible-vault encrypt_string $openclaw_gateway_env_secrets --name openclaw_gateway_env_secrets --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
+```
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:
