@@ -427,6 +427,7 @@ This role manages the deployment of **Openclaw**, a self-hosted gateway that con
 | `openclaw_gateway_env_vars` | List of device nodes to map (e.g., `["/dev/dri/renderD128:/dev/dri/renderD128"]`). | list | `omit` | No |
 | `openclaw_allow_origins` | List of allowed origins. Recommended values: `["http://127.0.0.1:18789", "http://localhost:18789", <your domain with http and https>]` | list | **(None)** | no |
 | `openclaw_trusted_proxies` | If you are behind a proxy, list the ip or cidr here: `["127.0.0.1", <your proxy ip or cidr. Eg: "172.18.0.0/16">]` | list | **(None)** | no |
+| `openclaw_disable_device_auth` | Enable/disable device auth. Useful when proxy doesn't have a fixed ip | bool | `false` | no |
 
 ansible-vault encrypt_string $$openclaw_gateway_env_secrets --name openclaw_gateway_env_secrets --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
 
