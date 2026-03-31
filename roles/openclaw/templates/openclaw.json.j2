@@ -7,7 +7,7 @@
     "controlUi": {
       "enabled": true,
       "allowedOrigins": {{ openclaw_allow_origins | default([]) | to_json }},
-      "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default(false) }}
+      "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default(false) | to_json }}
     }
   },
 
