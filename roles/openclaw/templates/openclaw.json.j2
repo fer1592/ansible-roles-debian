@@ -1,0 +1,18 @@
+{
+  "gateway": {
+    "mode": "local",
+    "bind": "lan",
+    "port": 18789
+  },
+
+  "agents": {
+    "defaults": {
+      "workspace": "~/.openclaw/workspace"
+    }
+  },
+
+  "controlUi": {
+    "enabled": true,
+    "allowedOrigins": {{ openclaw_allow_origins | to_json }}
+  }
+}
