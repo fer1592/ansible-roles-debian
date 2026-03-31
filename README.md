@@ -319,7 +319,6 @@ This role deploys **OpenCloud**, a lightweight fork of ownCloud that does not re
 | `opencloud_docker_network` | Docker network name to attach the container. | string | `bridge` | No |
 | `opencloud_env_vars` | Dictionary of environment variables. **Sensitive values (passwords) should be stored in Ansible Vault.** | dict | `{}` | No |
 | `opencloud_avahi_publish` | Whether to publish the service via mDNS. | boolean | `false` | No |
-| `openclaw_allow_origins` | List of allowed origins. Recommended values: `["http://127.0.0.1:18789", "http://localhost:18789", <your domain with http and https>] | list | **(None)** | yes |
 
 #### Access
 
@@ -426,6 +425,8 @@ This role manages the deployment of **Openclaw**, a self-hosted gateway that con
 | `openclaw_gateway_memory` | Memory and swap limit for the container. | string | **None** | Yes |
 | `openclaw_gateway_ports` | List of port mappings for the container (e.g., `["8096:8096"]`). | list | `omit` | No |
 | `openclaw_gateway_env_vars` | List of device nodes to map (e.g., `["/dev/dri/renderD128:/dev/dri/renderD128"]`). | list | `omit` | No |
+| `openclaw_allow_origins` | List of allowed origins. Recommended values: `["http://127.0.0.1:18789", "http://localhost:18789", <your domain with http and https>]` | list | **(None)** | no |
+| `openclaw_trusted_proxies` | If you are behind a proxy, list the ip or cidr here: `["127.0.0.1", <your proxy ip or cidr. Eg: "172.18.0.0/16">]` | list | **(None)** | no |
 
 ansible-vault encrypt_string $$openclaw_gateway_env_secrets --name openclaw_gateway_env_secrets --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
 

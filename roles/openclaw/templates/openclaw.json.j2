@@ -3,9 +3,10 @@
     "mode": "local",
     "bind": "lan",
     "port": 18789,
+    "trustedProxies": {{ openclaw_trusted_proxies | default([]) | to_json }},
     "controlUi": {
       "enabled": true,
-      "allowedOrigins": {{ openclaw_allow_origins | to_json }}
+      "allowedOrigins": {{ openclaw_allow_origins | default([]) | to_json }}
     }
   },
 
