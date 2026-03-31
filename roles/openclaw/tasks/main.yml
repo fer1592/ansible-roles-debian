@@ -44,6 +44,7 @@
     network_mode: "{{ openclaw_docker_network | default('bridge') }}"
     detach: true
     published_ports: "{{ openclaw_gateway_ports | default(omit) }}"
+    command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:18789/healthz"]
       interval: 60s
