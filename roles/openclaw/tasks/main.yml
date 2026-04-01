@@ -56,8 +56,6 @@
     memory: "{{ openclaw_gateway_memory }}"
     memory_swap: "{{ openclaw_gateway_memory }}"
     network_mode: "{{ openclaw_docker_network | default('bridge') }}"
-    groups: "root"
-    user: "root"
     detach: true
     published_ports: "{{ openclaw_gateway_ports | default(omit) }}"
     command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
@@ -68,8 +66,8 @@
       retries: 3
       start_period: 60s
     volumes:
-    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/config:/root/.openclaw"
-    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/workspace:/root/.openclaw/workspace"
+    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/config:/home/node/.openclaw"
+    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/workspace:/home/node/.openclaw/workspace"
     env: "{{ openclaw_gateway_env_vars | combine({'OPENCLAW_GATEWAY_TOKEN': openclaw_gateway_env_secrets}) }}"
     log_driver: json-file
     log_options:
