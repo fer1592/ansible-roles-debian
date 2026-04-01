@@ -68,8 +68,8 @@
       retries: 3
       start_period: 60s
     volumes:
-    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/config:/home/node/.openclaw"
-    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/workspace:/home/node/.openclaw/workspace"
+    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/config:/root/.openclaw"
+    - "/home/{{ ansible_facts.user_id }}/openclaw-gateway/workspace:/root/.openclaw/workspace"
     env: "{{ openclaw_gateway_env_vars | combine({'OPENCLAW_GATEWAY_TOKEN': openclaw_gateway_env_secrets}) }}"
     log_driver: json-file
     log_options:
