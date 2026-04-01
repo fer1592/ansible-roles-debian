@@ -56,6 +56,8 @@
     memory: "{{ openclaw_gateway_memory }}"
     memory_swap: "{{ openclaw_gateway_memory }}"
     network_mode: "{{ openclaw_docker_network | default('bridge') }}"
+    groups: "root"
+    user: "root"
     detach: true
     published_ports: "{{ openclaw_gateway_ports | default(omit) }}"
     command: ["node", "dist/index.js", "gateway", "--bind", "lan", "--port", "18789"]
