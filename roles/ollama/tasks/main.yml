@@ -25,7 +25,7 @@
 - name: Ensure the ollama container is running
   community.docker.docker_container:
     name: ollama
-    image: ollama/ollama:rocm
+    image: ollama/ollama:latest
     state: started
     hostname: ollama
     auto_remove: false
