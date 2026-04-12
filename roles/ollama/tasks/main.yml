@@ -34,7 +34,7 @@
     memory: "{{ ollama_memory }}"
     memory_swap: "{{ ollama_memory }}"
     detach: true
-    network_mode: "{{ ollama_docker_network | default('bridge') }}"
+    network_mode: "{{ ollama_docker_network.name | default('bridge') }}"
     published_ports: "{{ ollama_ports | default(omit) }}"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:11434/health"]
