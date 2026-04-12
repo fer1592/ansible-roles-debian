@@ -58,7 +58,7 @@
     command: "ollama pull {{ item.name }}"
     chdir: /root
   register: result
-  loop: ollama_models
+  loop: "{{ ollama_models }}"
 
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:
