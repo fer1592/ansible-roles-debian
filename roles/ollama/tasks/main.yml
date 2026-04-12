@@ -55,10 +55,12 @@
 - name: Download ollama model
   community.docker.docker_container_exec:
     container: ollama
-    command: "ollama pull {{ item }}"
+    command: "ollama pull {{ model }}"
     chdir: /root
   register: result
   loop: "{{ ollama_models }}"
+  loop_control:
+    loop_var: model
 
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:
