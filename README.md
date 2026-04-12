@@ -446,6 +446,25 @@ openclaw_gateway_env_secrets=$(openssl rand -hex 32)
 ansible-vault encrypt_string $openclaw_gateway_env_secrets --name openclaw_gateway_env_secrets --vault-password-file ~/.ansible/vault-password-file >> secrets.yml
 ```
 
+### omada-controller
+
+This role deploys the **Omada Controller** software, which manages and controls TP-Link Omada smart networking devices. It handles installation of the controller package, configuration of system user and directories, and sets up a systemd service for automatic startup and management.
+
+#### Performed Tasks
+
+* **System Setup:** Creates necessary system user (`omada`) and directory structure for controller data and logs.
+* **Package Management:** Downloads and installs the Omada Controller package from TP-Link's official repository.
+* **Service Configuration:** Sets up a systemd service to manage the Omada Controller process with appropriate permissions and environment variables.
+* **Binary Installation:** Copies required binaries and creates a symbolic link for easy command execution.
+* **Service Management:** Ensures the Omada Controller service is enabled and started after installation.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `omada_controller_download_url` | URL to download the Omada Controller package. | string | **None** | Yes |
+| `omada_controller_version` | Version of the Omada Controller to install. | string | **None** | Yes |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:

@@ -1,0 +1,19 @@
+[Unit]
+Description=Omada Controller SDN Controller
+After=network.target
+
+[Service]
+Type=forking
+User=omada
+Group=omada
+WorkingDirectory=/etc/omada-controller
+ExecStart=/usr/local/bin/omada-controller start
+ExecStop=/usr/local/bin/omada-controller stop
+ExecReload=/usr/local/bin/omada-controller restart
+Environment="OMADA_DATA_PATH=/etc/omada-controller/data"
+Environment="OMADA_LOG_PATH=/var/log/omada-controller/logs"
+TimeoutStartSec=180
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
