@@ -1,0 +1,85 @@
+---
+- name: Pull the latest ollama image
+  community.docker.docker_image_pull:
+    name: ollama/ollama
+    tag: latest
+    pull: always
+  become: true
+
+- name: Ensure the ollama data directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/ollama"
+    state: directory
+    owner: "{{ ansible_facts.current_user_uid }}"
+    group: "{{ ansible_facts.current_user_uid }}"
+    mode: 0755
+  become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ ollama_docker_network.name }}"
+    driver: "bridge"
+    driver_options: "{{ ollama_docker_network.driver_options | default(omit) }}"
+  when: ollama_docker_network is defined
+
+- name: Ensure the ollama container is running
+  community.docker.docker_container:
+    name: ollama
+    image: ollama/ollama:rocm
+    state: started
+    hostname: ollama
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ ollama_cpus }}"
+    memory: "{{ ollama_memory }}"
+    memory_swap: "{{ ollama_memory }}"
+    detach: true
+    network_mode: "{{ ollama_docker_network | default('bridge') }}"
+    published_ports: "{{ ollama_ports | default(omit) }}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    devices: "{{ ollama_devices | default(omit) }}"
+    volumes:
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/ollama:/root/.ollama:rw"
+    env: "{{ ollama_env_vars | default(omit) }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Download ollama model
+  community.docker.docker_container_exec:
+    container: ollama
+    command: "ollama pull {{ item.name }}"
+    chdir: /root
+  register: result
+  loop: ollama_models
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
+  when: ollama_avahi_publish is defined and ollama_avahi_publish
+
+- name: Ensure the ollama avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: "systemd-avahi-publish.service.j2"
+    dest: "/etc/systemd/system/avahi-publish-ollama.service"
+    mode: 0644
+    owner: root
+  become: true
+  register: ollama_avahi_publish_service
+  when: ollama_avahi_publish is defined and ollama_avahi_publish and avahi_daemon_running
+
+- name: Ensure the ollama avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-ollama.service
+    state: "{{ 'restarted' if ollama_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ ollama_avahi_publish_service.changed }}"
+  become: true
+  when: ollama_avahi_publish is defined and ollama_avahi_publish and avahi_daemon_running

@@ -1,0 +1,9 @@
+[Unit]
+Description=Avahi publish ollama record
+
+[Service]
+ExecStart=/usr/bin/avahi-publish -a -R {{ ansible_facts.hostname }}.local 11434
+User=root
+
+[Install]
+WantedBy=multi-user.target
