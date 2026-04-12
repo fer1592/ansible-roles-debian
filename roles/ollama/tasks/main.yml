@@ -55,7 +55,7 @@
 - name: Download ollama model
   community.docker.docker_container_exec:
     container: ollama
-    command: "ollama pull {{ item.name }}"
+    command: "ollama pull {{ item }}"
     chdir: /root
   register: result
   loop: "{{ ollama_models }}"
