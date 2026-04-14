@@ -1,8 +1,8 @@
 ---
 - name: Pull the latest whisper.cpp image
   community.docker.docker_image_pull:
-    name: ghcr.io/ggml-org/whisper.cpp
-    tag: main
+    name: lscr.io/linuxserver/faster-whisper
+    tag: latest
     pull: always
   become: true
 
@@ -22,29 +22,10 @@
     driver_outputs: "{{ whisper_docker_network.driver_options | default(omit) }}"
   when: whisper_docker_network is defined
 
-- name: Ensure whisper models are downloaded
-  community.docker.docker_container:
-    name: whisper-model-downloader
-    image: ghcr.io/ggml-org/whisper.cpp:main
-    state: started
-    hostname: whisper-model-downloader
-    cleanup: true
-    detach: false
-    network_mode: "{{ whisper_docker_network.name | default('bridge') }}"
-    entrypoint: "/app/models/download-ggml-model.sh"
-    command: ["{{ whisper_model }}", "/models"]
-    volumes:
-      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
-    log_driver: json-file
-    log_options:
-      max-size: 50m
-      max-file: "3"
-  become: true
-
 - name: Ensure the whisper container is running
   community.docker.docker_container:
     name: whisper
-    image: ghcr.io/ggml-org/whisper.cpp:main
+    image: lscr.io/linuxserver/faster-whisper:latest
     state: started
     hostname: whisper
     auto_remove: false
@@ -55,17 +36,11 @@
     detach: true
     network_mode: "{{ whisper_docker_network.name | default('bridge') }}"
     published_ports: "{{ whisper_ports | default(omit) }}"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 60s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
     devices: "{{ whisper_devices | default(omit) }}"
     entrypoint: "whisper-server"
     command: ["--host", "0.0.0.0", "-m", "/models/ggml-{{ whisper_model }}.bin"]
     volumes:
-      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/config:rw"
     env: "{{ whisper_env_vars | default(omit) }}"
     log_driver: json-file
     log_options:
