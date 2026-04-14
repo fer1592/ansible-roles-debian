@@ -188,11 +188,13 @@
 
 - name: Ensure the docker network exists if defined
   community.docker.docker_network:
-    name: "{{ item.name }}"
+    name: "{{ docker_network.name }}"
     driver: "bridge"
-    driver_options: "{{ item.driver_options | default(omit) }}"
+    driver_options: "{{ docker_network.driver_options | default(omit) }}"
   when: web_server_docker_networks is defined
   loop: "{{ web_server_docker_networks }}"
+  loop_control:
+    loop_var: docker_network
 
 - name: Ensure the Nginx container is running
   community.docker.docker_container:

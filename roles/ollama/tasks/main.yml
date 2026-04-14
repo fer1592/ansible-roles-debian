@@ -58,7 +58,7 @@
     command: "ollama pull {{ model }}"
     chdir: /root
   register: result
-  loop: "{{ ollama_models }}"
+  loop: "{{ ollama_models | default([]) }}"
   loop_control:
     loop_var: model
 
