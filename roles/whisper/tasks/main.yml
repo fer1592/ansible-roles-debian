@@ -31,9 +31,9 @@
     cleanup: true
     detach: false
     network_mode: "{{ whisper_docker_network.name | default('bridge') }}"
-    command: "./models/download-ggml-model.sh {{ whisper_model }} /models"
+    entrypoint: "/models/download-ggml-model.sh {{ whisper_model }} /model"
     volumes:
-      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/model:rw"
     log_driver: json-file
     log_options:
       max-size: 50m
@@ -61,9 +61,9 @@
       retries: 3
       start_period: 60s
     devices: "{{ whisper_devices | default(omit) }}"
-    command: "whisper-server --host 0.0.0.0 -m /models/ggml-{{ whisper_model }}.bin"
+    command: "whisper-server --host 0.0.0.0 -m /model/ggml-{{ whisper_model }}.bin"
     volumes:
-      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/model:rw"
     env: "{{ whisper_env_vars | default(omit) }}"
     log_driver: json-file
     log_options:
