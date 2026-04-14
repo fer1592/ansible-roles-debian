@@ -1,5 +1,5 @@
 ---
-- name: Pull the latest whisper.cpp image
+- name: Pull the latest faster-whisper image
   community.docker.docker_image_pull:
     name: lscr.io/linuxserver/faster-whisper
     tag: latest
@@ -37,8 +37,6 @@
     network_mode: "{{ whisper_docker_network.name | default('bridge') }}"
     published_ports: "{{ whisper_ports | default(omit) }}"
     devices: "{{ whisper_devices | default(omit) }}"
-    entrypoint: "whisper-server"
-    command: ["--host", "0.0.0.0", "-m", "/models/ggml-{{ whisper_model }}.bin"]
     volumes:
       - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/config:rw"
     env: "{{ whisper_env_vars | default(omit) }}"
