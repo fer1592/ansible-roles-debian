@@ -1,0 +1,96 @@
+---
+- name: Pull the latest whisper.cpp image
+  community.docker.docker_image_pull:
+    name: ghcr.io/ggml-org/whisper.cpp
+    tag: main
+    pull: always
+  become: true
+
+- name: Ensure the whisper models directory is present
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper"
+    state: directory
+    owner: "{{ ansible_facts.current_user_uid }}"
+    group: "{{ ansible_facts.current_user_uid }}"
+    mode: 0755
+  become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ whisper_docker_network.name }}"
+    driver: "bridge"
+    driver_outputs: "{{ whisper_docker_network.driver_options | default(omit) }}"
+  when: whisper_docker_network is defined
+
+- name: Ensure whisper models are downloaded
+  community.docker.docker_container:
+    name: whisper-model-downloader
+    image: ghcr.io/ggml-org/whisper.cpp:main
+    state: started
+    hostname: whisper-model-downloader
+    cleanup: true
+    detach: false
+    network_mode: "{{ whisper_docker_network.name | default('bridge') }}"
+    command: "./models/download-ggml-model.sh {{ whisper_model }} /models"
+    volumes:
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Ensure the whisper container is running
+  community.docker.docker_container:
+    name: whisper
+    image: ghcr.io/ggml-org/whisper.cpp:main
+    state: started
+    hostname: whisper
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ whisper_cpus }}"
+    memory: "{{ whisper_memory }}"
+    memory_swap: "{{ whisper_memory }}"
+    detach: true
+    network_mode: "{{ whisper_docker_network.name | default('bridge') }}"
+    published_ports: "{{ whisper_ports | default(omit) }}"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    devices: "{{ whisper_devices | default(omit) }}"
+    command: "whisper-server --host 0.0.0.0 -m /models/ggml-{{ whisper_model }}.bin"
+    volumes:
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
+    env: "{{ whisper_env_vars | default(omit) }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
+  when: whisper_avahi_publish is defined and whisper_avahi_publish
+
+- name: Ensure the whisper avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: "systemd-avahi-publish.service.j2"
+    dest: "/etc/systemd/system/avahi-publish-whisper.service"
+    mode: 0644
+    owner: root
+  become: true
+  register: whisper_avahi_publish_service
+  when: whisper_avahi_publish is defined and whisper_avahi_publish and avahi_daemon_running
+
+- name: Ensure the whisper avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-whisper.service
+    state: "{{ 'restarted' if whisper_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ whisper_avahi_publish_service.changed }}"
+  become: true
+  when: whisper_avahi_publish is defined and whisper_avahi_publish and avahi_daemon_running
