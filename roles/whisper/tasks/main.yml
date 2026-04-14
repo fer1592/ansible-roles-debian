@@ -31,7 +31,8 @@
     cleanup: true
     detach: false
     network_mode: "{{ whisper_docker_network.name | default('bridge') }}"
-    entrypoint: "/app/models/download-ggml-model.sh {{ whisper_model }} /models"
+    entrypoint: "/app/models/download-ggml-model.sh"
+    command: ["{{ whisper_model }}", "/models"]
     volumes:
       - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
     log_driver: json-file
