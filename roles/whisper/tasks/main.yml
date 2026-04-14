@@ -62,7 +62,8 @@
       retries: 3
       start_period: 60s
     devices: "{{ whisper_devices | default(omit) }}"
-    command: "whisper-server --host 0.0.0.0 -m /models/ggml-{{ whisper_model }}.bin"
+    entrypoint: "whisper-server"
+    command: ["--host", "0.0.0.0", "-m", "/models/ggml-{{ whisper_model }}.bin"]
     volumes:
       - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/whisper:/models:rw"
     env: "{{ whisper_env_vars | default(omit) }}"
