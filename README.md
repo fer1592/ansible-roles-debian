@@ -465,6 +465,30 @@ This role deploys the **Omada Controller** software, which manages and controls 
 | `omada_controller_download_url` | URL to download the Omada Controller package. | string | **None** | Yes |
 | `omada_controller_version` | Version of the Omada Controller to install. | string | **None** | Yes |
 
+### ollama
+
+This role installs and configures an **Ollama** container. Ollama allows you to run large language models locally.
+
+#### Performed Tasks
+
+* **Docker Image Pull:** Pulls the `ollama/ollama:latest` Docker image.
+* **Directory Creation:** Creates necessary data directories for Ollama storage.
+* **Container Configuration:** Sets up and starts the Ollama container.
+* **GPU Access:** Provides access to AMD GPUs via `/dev/kfd` and `/dev/dri/renderD128`.
+
+#### Input Variables
+
+| Variable | Description | Type | Default Value | Mandatory |
+| :--- | :--- | :--- | :--- | :--- |
+| `ollama_cpus` | CPU cores allocation for the container. | integer | 1 | No |
+| `ollama_memory` | Memory allocation for the container. | string | "512m" | No |
+| `ollama_docker_network` | Docker network name to connect the container to. | string | "bridge" | No |
+| `ollama_ports` | Published ports for the container. | list | [] | No |
+| `ollama_devices` | List of devices to mount into the container. Useful to accelerate AI using a graphic card or AI device. | list | [] | No |
+| `ollama_env_vars` | Environment variables to pass to the container. | dict | {} | No |
+| `ollama_avahi_publish` | Enable Avahi service publishing. | boolean | false | No |
+| `ollama_models` | List of models to be downloaded by ollama. | list | [] | No |
+
 ## Initial Configuration
 
 In order to use the previous roles, you will need:
