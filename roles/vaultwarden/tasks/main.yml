@@ -16,7 +16,7 @@
   community.docker.docker_container:
     name: vaultwarden
     image: quay.io/vaultwarden/server:latest-alpine
-    state: started
+    state: healthy
     hostname: vaultwarden
     auto_remove: false
     restart_policy: unless-stopped
@@ -31,7 +31,7 @@
       retries: 3
       test: ["CMD", "curl", "-f", "http://localhost:8000/alive"]
     volumes:
-    - vaultwarden_data:/data/
+      - vaultwarden_data:/data/
     env:
       ADMIN_TOKEN: "{{ vaultwarden_admin_token }}"
       SIGNUPS_ALLOWED: "{{ vaultwarden_signups_allowed }}"

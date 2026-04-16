@@ -41,13 +41,14 @@
     - gcc
     - ethtool
     - btrfs-progs
+    - nftables
   become: true
 
 - name: Ensure avahi is installed if enabled
   ansible.builtin.apt:
     name:
-    - avahi-daemon
-    - avahi-utils
+      - avahi-daemon
+      - avahi-utils
   become: true
   when: avahi_enabled
 
@@ -136,9 +137,9 @@
 - name: Ensure ansible and pip are installed and up-to-date
   ansible.builtin.pip:
     name:
-    - ansible
-    - ansible-core
-    - pip
+      - ansible
+      - ansible-core
+      - pip
     state: latest
     executable: "{{ ansible_facts.python_binaries_path }}/pip"
 
@@ -177,7 +178,7 @@
 
 - name: Ensure ansible-roles-debian repository is updated
   ansible.builtin.git:
-    repo: 'git@github.com:fer1592/ansible-roles-debian.git'
+    repo: "git@github.com:fer1592/ansible-roles-debian.git"
     dest: "{{ common_ansible_roles_debian_repo_path | default('.') }}"
     version: main
     update: true
@@ -230,8 +231,8 @@
     shutdown -r +3 "Reboot scheduled by Ansible due to static IP change"
   become: true
   when:
-  - common_static_ip_config is defined
-  - nmcli_result is changed
+    - common_static_ip_config is defined
+    - nmcli_result is changed
 
 - name: Ensure the {{ common_avahi_publish_hostname | default('') }} avahi-publish systemd service is created
   ansible.builtin.template:
