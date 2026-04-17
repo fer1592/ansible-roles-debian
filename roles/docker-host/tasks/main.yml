@@ -62,12 +62,21 @@
   become: true
   register: daemon_config_file
 
+- name: Ensure forwarding is enabled for nftables to work
+  ansible.builtin.template:
+    src: 99-docker-forwarding.conf.j2
+    dest: "/etc/sysctl.d/99-docker-forwarding.conf.j2"
+    mode: 644
+    owner: root
+  become: true
+  register: docker_forwarding_file
+
 - name: Ensure docker service is enabled and running
   ansible.builtin.service:
     name: docker
-    state: "{{ 'restarted' if daemon_config_file.changed else 'started' }}"
+    state: "{{ 'restarted' if daemon_config_file.changed or docker_forwarding_file.changed else 'started' }}"
     enabled: yes
-    daemon_reload: "{{ daemon_config_file.changed }}"
+    daemon_reload: "{{ daemon_config_file.changed or docker_forwarding_file.changed }}"
   become: true
 
 - name: Ensure containerd service is enabled and running
