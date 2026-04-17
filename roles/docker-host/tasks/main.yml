@@ -74,7 +74,7 @@
 - name: Apply sysctl (equivalente a sysctl --system)
   ansible.builtin.command: sysctl --system
   become: true
-  when: "{{ docker_forwarding_file.changed }}"
+  when: docker_forwarding_file.changed
 
 - name: Ensure docker service is enabled and running
   ansible.builtin.service:
