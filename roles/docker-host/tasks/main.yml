@@ -65,7 +65,7 @@
 - name: Ensure forwarding is enabled for nftables to work
   ansible.builtin.template:
     src: 99-docker-forwarding.conf.j2
-    dest: "/etc/sysctl.d/99-docker-forwarding.conf.j2"
+    dest: "/etc/sysctl.d/99-docker-forwarding.conf"
     mode: 644
     owner: root
   become: true
