@@ -53,11 +53,21 @@
     append: yes
   become: true
 
+- name: Ensure docker config is present
+  ansible.builtin.template:
+    src: daemon.json.j2
+    dest: "/etc/docker/daemon.json"
+    mode: 755
+    owner: root
+  become: true
+  register: daemon_config_file
+
 - name: Ensure docker service is enabled and running
   ansible.builtin.service:
     name: docker
-    state: started
+    state: "{{ 'restarted' if daemon_config_file.changed else 'started' }}"
     enabled: yes
+    daemon_reload: "{{ daemon_config_file.changed }}"
   become: true
 
 - name: Ensure containerd service is enabled and running

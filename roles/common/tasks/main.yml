@@ -253,11 +253,21 @@
   become: true
   when: avahi_enabled and common_avahi_publish_hostname is defined
 
+- name: Ensure nftables.conf exists
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: "/etc/nftables.conf"
+    mode: 755
+    owner: root
+  become: true
+  register: nftables_config_file
+
 - name: Ensure the nftables service is enabled and started
   ansible.builtin.systemd:
     name: nftables.service
-    state: started
+    state: "{{ 'restarted' if nftables_config_file.changed else 'started' }}"
     enabled: yes
+    daemon_reload: "{{ nftables_config_file.changed }}"
   become: true
 
 - name: Ensure WOL is set if enabled
