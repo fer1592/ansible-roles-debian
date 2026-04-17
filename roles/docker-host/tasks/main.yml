@@ -71,12 +71,17 @@
   become: true
   register: docker_forwarding_file
 
+- name: Apply sysctl (equivalente a sysctl --system)
+  ansible.builtin.command: sysctl --system
+  become: true
+  when: "{{ docker_forwarding_file.changed }}"
+
 - name: Ensure docker service is enabled and running
   ansible.builtin.service:
     name: docker
-    state: "{{ 'restarted' if daemon_config_file.changed or docker_forwarding_file.changed else 'started' }}"
+    state: "{{ 'restarted' if daemon_config_file.changed else 'started' }}"
     enabled: yes
-    daemon_reload: "{{ daemon_config_file.changed or docker_forwarding_file.changed }}"
+    daemon_reload: "{{ daemon_config_file.changed }}"
   become: true
 
 - name: Ensure containerd service is enabled and running
