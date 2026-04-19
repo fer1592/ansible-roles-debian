@@ -257,7 +257,7 @@
   ansible.builtin.template:
     src: nftables.conf.j2
     dest: "/etc/nftables.conf"
-    mode: 755
+    mode: 0644
     owner: root
   become: true
   register: nftables_config_file

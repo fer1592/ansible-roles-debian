@@ -8,9 +8,21 @@
 
 - name: Ensure the docker network exists if defined
   community.docker.docker_network:
-    name: "{{ vaultwarden_docker_network }}"
+    name: "{{ vaultwarden_docker_network.name }}"
     driver: "bridge"
+    ipam_config: "{{ vaultwarden_docker_network.ipam_config | default(omit) }}"
+    internal: vaultwarden_docker_network.internal | default(omit)
   when: vaultwarden_docker_network is defined
+  register: vaultwarden_docker_network_data
+
+- name: Ensure access to internet is blocked if internal network is defined
+  ansible.builtin.template:
+    src: nftables-vaultwarden.nft.j2
+    dest: "/etc/nftables.d/nftables-vaultwarden.nft"
+    mode: 0644
+    owner: root
+  become: true
+  when: vaultwarden_docker_network.internal is defined and vaultwarden_docker_network.internal
 
 - name: Ensure the vaultwarden container is running
   community.docker.docker_container:

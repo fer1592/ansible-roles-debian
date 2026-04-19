@@ -1,0 +1,11 @@
+table inet vaultwarden-docker-restrict {
+    chain output {
+        type filter hook forward priority 0; policy accept;
+
+        # Allow established connections
+        ct state established,related accept
+
+        # Drop any output package from that subnet
+        ip saddr {{ vaultwarden_docker_network_data.ipam_config.iprange }} drop
+    }
+}
