@@ -10,8 +10,8 @@
   community.docker.docker_network:
     name: "{{ vaultwarden_docker_network.name }}"
     driver: "bridge"
-    ipam_config: "{{ vaultwarden_docker_network.ipam_config if vaultwarden_docker_network.ipam_config else omit }}"
-    internal: "{{ vaultwarden_docker_network.internal if vaultwarden_docker_network.internal else omit }}"
+    ipam_config: "{{ vaultwarden_docker_network.ipam_config | default(omit) }}"
+    internal: "{{ vaultwarden_docker_network.internal | default(omit) }}"
   when: vaultwarden_docker_network is defined
   register: vaultwarden_docker_network_data
 
