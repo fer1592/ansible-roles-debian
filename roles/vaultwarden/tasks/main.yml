@@ -15,32 +15,6 @@
   when: vaultwarden_docker_network is defined
   register: vaultwarden_docker_network_data
 
-- name: Ensure nftables.d dir exists
-  ansible.builtin.file:
-    path: "/etc/nftables.d"
-    state: directory
-    owner: root
-    group: root
-    mode: 0755
-  become: true
-
-- name: Ensure access to internet is blocked if internal network is defined
-  ansible.builtin.template:
-    src: nftables-vaultwarden.nft.j2
-    dest: "/etc/nftables.d/nftables-vaultwarden.nft"
-    mode: 0644
-    owner: root
-  become: true
-  when: vaultwarden_docker_network.internal is defined and vaultwarden_docker_network.internal
-  register: vaultwarden_nftables_file
-
-- name: Ensure nftables is restarted if nft file changes
-  ansible.builtin.systemd_service:
-    name: nftables.service
-    state: "restarted"
-  become: true
-  when: vaultwarden_nftables_file is defined and vaultwarden_nftables_file.changed
-
 - name: Ensure the vaultwarden container is running
   community.docker.docker_container:
     name: vaultwarden
