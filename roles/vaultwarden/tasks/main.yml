@@ -15,6 +15,10 @@
   when: vaultwarden_docker_network is defined
   register: vaultwarden_docker_network_data
 
+- name: Show variable value
+  ansible.builtin.debug:
+    var: vaultwarden_docker_network_data
+
 - name: Ensure access to internet is blocked if internal network is defined
   ansible.builtin.template:
     src: nftables-vaultwarden.nft.j2
