@@ -6,6 +6,6 @@ table inet vaultwarden-docker-restrict {
         ct state established,related accept
 
         # Drop any output package from that subnet
-        ip saddr {{ vaultwarden_docker_network_data.ipam_config.network.IPAM.Config[0].Subnet }} drop
+        ip saddr {{ vaultwarden_docker_network_data.network.IPAM.Config[0].Subnet }} drop
     }
 }
