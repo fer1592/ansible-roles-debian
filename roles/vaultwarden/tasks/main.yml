@@ -53,7 +53,7 @@
     memory: "{{ vaultwarden_memory }}"
     memory_swap: "{{ vaultwarden_memory }}"
     detach: true
-    network_mode: "{{ vaultwarden_docker_network | default('bridge') }}"
+    network_mode: "{{ vaultwarden_docker_network.name | default('bridge') }}"
     published_ports: "{{ vaultwarden_ports | default(omit) }}"
     healthcheck:
       interval: 30s
