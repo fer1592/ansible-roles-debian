@@ -1,8 +1,8 @@
 {
-    {%- if docker_host_default_address_pool is defined %}
+    {% if docker_host_default_address_pool is defined -%}
     "default-address-pools": [
       { "base":"{{ docker_host_default_address_pool.cidr }}","size": {{ docker_host_default_address_pool.size }} }
     ],
-    {%- endif %}
+    {% endif -%}
     "firewall-backend": "nftables"
 }
