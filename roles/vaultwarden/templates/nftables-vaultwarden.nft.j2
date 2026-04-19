@@ -1,7 +1,5 @@
 table inet vaultwarden-docker-restrict {
-    chain output {
-        type filter hook forward priority 0; policy accept;
-
+    chain forward {
         # Allow established connections
         ct state established,related accept
 
