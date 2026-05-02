@@ -274,3 +274,15 @@
   ansible.builtin.shell: "ethtool -s {{ common_static_ip_config.ifname }} wol g"
   when: common_static_ip_config is defined and common_static_ip_config.enable_wol is defined and common_static_ip_config.enable_wol
   become: true
+
+- name: Ensure a cron for rebooting daily exists
+  ansible.builtin.cron:
+    name: "maintenace reboot"
+    minute: "0"
+    hour: "4"
+    day: "*"
+    month: "*"
+    weekday: "*"
+    user: root
+    job: "shutdown -r now"
+  become: true
