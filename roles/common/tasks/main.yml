@@ -279,7 +279,7 @@
   ansible.builtin.cron:
     name: "maintenace reboot"
     minute: "0"
-    hour: "4"
+    hour: "7"
     day: "*"
     month: "*"
     weekday: "*"
