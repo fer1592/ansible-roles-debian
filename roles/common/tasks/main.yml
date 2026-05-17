@@ -284,5 +284,5 @@
     month: "*"
     weekday: "*"
     user: root
-    job: "shutdown -r now"
+    job: "/usr/sbin/shutdown -r now"
   become: true
