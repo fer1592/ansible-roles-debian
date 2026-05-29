@@ -152,7 +152,8 @@
   when: avahi_enabled
 
 - name: Ensure community.general collection is installed
-  ansible.builtin.command: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.general"
+  ansible.builtin.command:
+    cmd: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.general"
 
 - name: Ensure git pull.rebase is set to false
   community.general.git_config:
