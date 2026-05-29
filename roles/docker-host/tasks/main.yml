@@ -28,8 +28,6 @@
     components: "{{ ansible_facts[\"distribution_release\"] }}"
     suites: "stable"
     state: present
-    update_cache: yes
-    filename: docker
   become: true
 
 - name: Ensure docker is installed
