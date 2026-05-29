@@ -17,7 +17,7 @@
   community.docker.docker_container:
     name: twingate-connector
     image: twingate/connector:1
-    state: started
+    state: healthy
     hostname: twingate-connector
     auto_remove: false
     restart_policy: unless-stopped

@@ -26,7 +26,7 @@
   community.docker.docker_container:
     name: ollama
     image: ollama/ollama:latest
-    state: started
+    state: healthy
     hostname: ollama
     auto_remove: false
     restart_policy: unless-stopped

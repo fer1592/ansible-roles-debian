@@ -200,7 +200,7 @@
   community.docker.docker_container:
     name: nginx
     image: nginx:stable
-    state: started
+    state: healthy
     hostname: nginx
     auto_remove: false
     restart_policy: unless-stopped

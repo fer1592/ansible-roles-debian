@@ -24,7 +24,7 @@
   community.docker.docker_container:
     name: ntfy
     image: binwiederhier/ntfy:latest
-    state: started
+    state: healthy
     hostname: ntfy
     auto_remove: false
     restart_policy: unless-stopped

@@ -42,7 +42,7 @@
   community.docker.docker_container:
     name: jellyfin
     image: ghcr.io/jellyfin/jellyfin:latest
-    state: started
+    state: healthy
     hostname: jellyfin
     auto_remove: false
     restart_policy: unless-stopped
