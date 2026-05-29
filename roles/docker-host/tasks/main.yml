@@ -21,7 +21,12 @@
 
 - name: Add Docker Repository
   ansible.builtin.deb822_repository:
-    repo: "deb [arch={{ dpkg_arch }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ ansible_facts[\"distribution_release\"] }} stable"
+    name: docker
+    architectures: "{{ dpkg_arch }}"
+    signed_by: "/etc/apt/keyrings/docker.asc"
+    uris: "https://download.docker.com/linux/debian"
+    components: "{{ ansible_facts[\"distribution_release\"] }}"
+    suites: "stable"
     state: present
     update_cache: yes
     filename: docker
