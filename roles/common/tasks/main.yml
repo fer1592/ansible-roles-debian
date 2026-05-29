@@ -138,7 +138,7 @@
   ansible.builtin.pip:
     name:
       - ansible
-      - ansible-core
+      - ansible-core==2.20.6
       - pip
     state: latest
     executable: "{{ ansible_facts.python_binaries_path }}/pip"
@@ -152,8 +152,7 @@
   when: avahi_enabled
 
 - name: Ensure community.general collection is installed
-  ansible.builtin.command:
-    cmd: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.general"
+  ansible.builtin.command: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.general"
 
 - name: Ensure git pull.rebase is set to false
   community.general.git_config:
