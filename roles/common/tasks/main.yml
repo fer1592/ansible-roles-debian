@@ -138,7 +138,7 @@
   ansible.builtin.pip:
     name:
       - ansible
-      - ansible-core==2.20.6
+      - ansible-core
       - pip
     state: latest
     executable: "{{ ansible_facts.python_binaries_path }}/pip"
