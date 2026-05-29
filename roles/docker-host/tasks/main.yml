@@ -25,9 +25,11 @@
     architectures: "{{ dpkg_arch }}"
     signed_by: "/etc/apt/keyrings/docker.asc"
     uris: "https://download.docker.com/linux/debian"
-    components: "{{ ansible_facts[\"distribution_release\"] }}"
-    suites: "stable"
+    components: [stable]
+    suites: ["{{ ansible_distribution_release|lower }}"]
     state: present
+    types: [deb]
+    enabled: true
   become: true
 
 - name: Ensure docker is installed
