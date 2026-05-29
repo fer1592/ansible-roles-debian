@@ -25,10 +25,10 @@
     architectures: "{{ dpkg_arch }}"
     signed_by: "/etc/apt/keyrings/docker.asc"
     uris: "https://download.docker.com/linux/debian"
-    components: [stable]
-    suites: ["{{ ansible_distribution_release|lower }}"]
+    components: "stable"
+    suites: "{{ ansible_facts['distribution_release'] | lower }}"
     state: present
-    types: [deb]
+    types: "deb"
     enabled: true
   become: true
 
