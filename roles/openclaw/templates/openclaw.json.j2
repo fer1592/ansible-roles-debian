@@ -5,10 +5,7 @@
     "mode": "local",
     "trustedProxies": {{ openclaw_trusted_proxies | default([]) | to_json }},
     "auth": {
-      "mode": "token",
-      "trustedProxy": {
-        requiredHeaders: ["x-forwarded-proto", "x-forwarded-host"],
-      }
+      "mode": "token"
     },
     "controlUi": {
       "allowedOrigins": {{ openclaw_allow_origins | default([]) | to_json }},
