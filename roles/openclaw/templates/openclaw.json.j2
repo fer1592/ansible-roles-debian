@@ -1,11 +1,17 @@
 {
   "gateway": {
-    "mode": "local",
     "bind": "lan",
     "port": 18789,
     "trustedProxies": {{ openclaw_trusted_proxies | default([]) | to_json }},
+    auth: {
+      "mode": "trusted-proxy",
+      "trustedProxy": {
+        userHeader: "x-forwarded-user",
+        requiredHeaders: ["x-forwarded-proto", "x-forwarded-host"],
+        allowUsers: ["fer@miemail.com"],
+      }
+    }
     "controlUi": {
-      "enabled": true,
       "allowedOrigins": {{ openclaw_allow_origins | default([]) | to_json }},
       "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default(false) | to_json }}
     }
