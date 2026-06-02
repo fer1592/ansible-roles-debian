@@ -4,20 +4,19 @@
     "port": 18789,
     "mode": "local",
     "trustedProxies": {{ openclaw_trusted_proxies | default([]) | to_json }},
-    auth: {
+    "auth": {
       "mode": "token",
       "trustedProxy": {
         userHeader: "x-forwarded-user",
         requiredHeaders: ["x-forwarded-proto", "x-forwarded-host"],
         allowUsers: ["fer@miemail.com"],
       }
-    }
+    },
     "controlUi": {
       "allowedOrigins": {{ openclaw_allow_origins | default([]) | to_json }},
       "dangerouslyDisableDeviceAuth": {{ openclaw_disable_device_auth | default(false) | to_json }}
     }
   },
-
   "agents": {
     "defaults": {
       "workspace": "~/.openclaw/workspace"
