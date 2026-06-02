@@ -2,6 +2,7 @@
   "gateway": {
     "bind": "lan",
     "port": 18789,
+    "mode": "local",
     "trustedProxies": {{ openclaw_trusted_proxies | default([]) | to_json }},
     auth: {
       "mode": "trusted-proxy",
