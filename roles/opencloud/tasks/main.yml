@@ -215,7 +215,7 @@
     restart: "{{ radicale_config.changed | default(false) }}"
     user: "1000:1000"
     volumes:
-      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-config:/etc/radicale/config:ro"
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-config/config:/etc/radicale/config:ro"
       - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-data:/var/lib/radicale:rw"
     log_driver: json-file
     log_options:
