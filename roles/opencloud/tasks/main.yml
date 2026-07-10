@@ -50,7 +50,7 @@
   community.docker.docker_container:
     name: opencloud-init
     image: opencloudeu/opencloud-rolling:latest
-    state: started
+    state: healthy
     hostname: opencloud-init
     auto_remove: true
     detach: false
@@ -91,7 +91,62 @@
     log_options:
       max-size: 50m
       max-file: "3"
+    healthcheck:
+      interval: 15s
+      retries: 5
+      timeout: 10s
+      test: ["CMD", "curl", "-f", "-k", "--max-time", "2", "https://localhost:9200/"]
   become: true
+
+- name: Pull the latest collabora image
+  community.docker.docker_image_pull:
+    name: collabora/code
+    tag: "latest"
+    pull: always
+  become: true
+  when: opencloud_collabora_enabled | default(false)
+
+- name: Ensure the collabora container is running
+  community.docker.docker_container:
+    name: collabora
+    image: collabora/code:latest
+    state: healthy
+    hostname: collabora
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ opencloud_collabora_cpus }}"
+    memory: "{{ opencloud_collabora_memory }}"
+    memory_swap: "{{ opencloud_collabora_memory }}"
+    detach: true
+    network_mode: "{{ opencloud_docker_network | default('bridge') }}"
+    privileged: false
+    entrypoint: [ '/bin/bash', '-c' ]
+    command: [ 'coolconfig generate-proof-key && /start-collabora-online.sh' ]
+    security_opts:
+      - "seccomp=unconfined"
+      - "apparmor:unconfined"
+    capabilities:
+      - "SYS_ADMIN"
+    volumes:
+      - "/usr/share/fonts/truetype:/usr/share/fonts/truetype/more:ro"
+      - "/usr/share/fonts/truetype:/opt/cool/systemplate/usr/share/fonts/truetype/more:ro"
+    env:
+      aliasgroup1: "https://{{ opencloud_wopiserver }}"
+      DONT_GEN_SSL_CERT: "YES"
+      extra_params: "--o:ssl.enable=false --o:ssl.ssl_verification=false --o:ssl.termination=true --o:welcome.enable=false --o:net.frame_ancestors={{ opencloud_env_vars.OC_URL | regex_replace('https://', '') }} --o:net.lok_allow.host[14]={{ opencloud_env_vars.OC_URL | regex_replace('https://', '') }} --o:home_mode.enable=false"
+      username: "{{ opencloud_collabora_admin_user }}"
+      password: "{{ opencloud_collabora_admin_password }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+    healthcheck:
+      interval: 15s
+      retries: 5
+      timeout: 10s
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9980 && printf 'GET /hosting/discovery HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | head -1 | grep -q '200 OK'"]
+  become: true
+  when: opencloud_collabora_enabled | default(false)
 
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:

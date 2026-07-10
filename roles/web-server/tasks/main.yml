@@ -46,7 +46,7 @@
 
 - name: Ensure community.crypto collection is installed if web_server_enable_self_signed_ssl_certificate is true
   ansible.builtin.command: "{{ ansible_facts.python_binaries_path }}/ansible-galaxy collection install -U community.crypto"
-  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
+  when: web_server_enable_self_signed_ssl_certificate is defined and web_server_enable_self_signed_ssl_certificate
 
 - name: Ensure the SSL directory is present if web_server_enable_self_signed_ssl_certificate is true
   ansible.builtin.file:
@@ -154,8 +154,8 @@
 - name: Create fullchain.pem for Nginx
   ansible.builtin.copy:
     content: |
-      {{ lookup('file', '/home/' + ansible_facts.user_id + '/nginx/ssl/certificate.crt') }}
-      {{ lookup('file', '/home/' + ansible_facts.user_id + '/nginx/ca/ca-certificate.pem') }}
+      {{ lookup('file', '/home/' + ansible_facts.user_id + '/ansible-roles-debian-data/web-server/ssl/certificate.crt') }}
+      {{ lookup('file', '/home/' + ansible_facts.user_id + '/ansible-roles-debian-data/web-server/ca/ca-certificate.pem') }}
     dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/web-server/ssl/fullchain.pem"
     owner: root
     group: root
