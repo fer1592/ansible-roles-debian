@@ -35,6 +35,48 @@
   register: csp_config
   when: opencloud_csp_config_block is defined
 
+- name: Ensure the proxy.yaml file exists if opencloud_radicale_enabled is true
+  ansible.builtin.template:
+    src: proxy.yaml.j2
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/opencloud-config/proxy.yaml"
+    owner: 1000
+    group: 1000
+    mode: 0644
+  become: true
+  register: proxy_config
+  when: opencloud_radicale_enabled | default(false)
+
+- name: Ensure the radicale-config directory is present if opencloud_radicale_enabled is true
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-config"
+    state: directory
+    owner: 1000
+    group: 1000
+    mode: 0755
+  become: true
+  when: opencloud_radicale_enabled | default(false)
+
+- name: Ensure the radicale-data directory is present if opencloud_radicale_enabled is true
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-data"
+    state: directory
+    owner: 1000
+    group: 1000
+    mode: 0755
+  become: true
+  when: opencloud_radicale_enabled | default(false)
+
+- name: Ensure the radicale conf file exists if opencloud_radicale_enabled is true
+  ansible.builtin.template:
+    src: radicale-config.j2
+    dest: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-config/config"
+    owner: 1000
+    group: 1000
+    mode: 0644
+  become: true
+  register: radicale_config
+  when: opencloud_radicale_enabled | default(false)
+
 - name: Ensure the docker network exists if defined
   community.docker.docker_network:
     name: "{{ opencloud_docker_network }}"
@@ -114,6 +156,7 @@
     hostname: collabora
     auto_remove: false
     restart_policy: unless-stopped
+    restart: "{{ csp_config.changed or proxy_config.changed | default(false) }}"
     cpus: "{{ opencloud_collabora_cpus }}"
     memory: "{{ opencloud_collabora_memory }}"
     memory_swap: "{{ opencloud_collabora_memory }}"
@@ -147,6 +190,39 @@
       test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9980 && printf 'GET /hosting/discovery HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | head -1 | grep -q '200 OK'"]
   become: true
   when: opencloud_collabora_enabled | default(false)
+
+- name: Pull the latest radicale image
+  community.docker.docker_image_pull:
+    name: opencloudeu/radicale
+    tag: "latest"
+    pull: always
+  become: true
+  when: opencloud_radicale_enabled | default(false)
+
+- name: Ensure the radicale container is running
+  community.docker.docker_container:
+    name: radicale
+    image: opencloudeu/radicale:latest
+    state: started
+    hostname: radicale
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ opencloud_radicale_cpus }}"
+    memory: "{{ opencloud_radicale_memory }}"
+    memory_swap: "{{ opencloud_radicale_memory }}"
+    detach: true
+    network_mode: "{{ opencloud_docker_network | default('bridge') }}"
+    restart: "{{ radicale_config.changed | default(false) }}"
+    user: "1000:1000"
+    volumes:
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-config:/etc/radicale/config:ro"
+      - "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/opencloud/radicale-data:/var/lib/radicale:rw"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+  when: opencloud_radicale_enabled | default(false)
 
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:
