@@ -131,7 +131,7 @@
       - "/usr/share/fonts/truetype:/usr/share/fonts/truetype/more:ro"
       - "/usr/share/fonts/truetype:/opt/cool/systemplate/usr/share/fonts/truetype/more:ro"
     env:
-      aliasgroup1: "https://{{ opencloud_wopiserver }}"
+      aliasgroup1: "{{ opencloud_wopiserver }}"
       DONT_GEN_SSL_CERT: "YES"
       extra_params: "--o:ssl.enable=false --o:ssl.ssl_verification=false --o:ssl.termination=true --o:welcome.enable=false --o:net.frame_ancestors={{ opencloud_env_vars.OC_URL | regex_replace('https://', '') }} --o:net.lok_allow.host[14]={{ opencloud_env_vars.OC_URL | regex_replace('https://', '') }} --o:home_mode.enable=false"
       username: "{{ opencloud_collabora_admin_user }}"
