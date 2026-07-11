@@ -49,6 +49,8 @@
     detach: true
     network_mode: "{{ netdata_docker_network.name | default('bridge') }}"
     published_ports: "{{ netdata_ports | default(omit) }}"
+    security_opts:
+      - apparmor:unconfined
     capabilities:
       - "SYS_ADMIN"
       - "SYS_PTRACE"
