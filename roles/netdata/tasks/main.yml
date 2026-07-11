@@ -54,6 +54,7 @@
     capabilities:
       - "SYS_ADMIN"
       - "SYS_PTRACE"
+      - "SYS_RAWIO"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:19999/api/v1/info"]
       interval: 30s
@@ -75,6 +76,8 @@
     - "/var/run/docker.sock:/var/run/docker.sock:ro"
     - "/run/dbus:/run/dbus:ro"
     env: "{{ ntfy_env_vars }}"
+    devices:
+      - "/dev/nvme0n1:/dev/nvme0n1"
     log_driver: json-file
     log_options:
       max-size: 50m
