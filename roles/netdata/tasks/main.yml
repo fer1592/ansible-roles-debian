@@ -54,7 +54,6 @@
     capabilities:
       - "SYS_ADMIN"
       - "SYS_PTRACE"
-      - "SYS_RAWIO"
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:19999/api/v1/info"]
       interval: 30s
