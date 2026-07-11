@@ -75,7 +75,6 @@
     - "/var/log:/host/var/log:ro"
     - "/var/run/docker.sock:/var/run/docker.sock:ro"
     - "/run/dbus:/run/dbus:ro"
-    env: "{{ ntfy_env_vars }}"
     devices:
       - "/dev/nvme0n1:/dev/nvme0n1"
     log_driver: json-file
@@ -87,23 +86,23 @@
 - name: Check if avahi-daemon is running
   ansible.builtin.set_fact:
     avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
-  when: ntfy_avahi_publish is defined and ntfy_avahi_publish
+  when: netdata_avahi_publish is defined and netdata_avahi_publish
 
-- name: Ensure the ntfy avahi-publish systemd service is created
+- name: Ensure the netdata avahi-publish systemd service is created
   ansible.builtin.template:
     src: systemd-avahi-publish.service.j2
-    dest: "/etc/systemd/system/avahi-publish-ntfy.service"
+    dest: "/etc/systemd/system/avahi-publish-netdata.service"
     mode: 0644
     owner: root
   become: true
-  register: ntfy_avahi_publish_service
-  when: ntfy_avahi_publish is defined and ntfy_avahi_publish and avahi_daemon_running
+  register: netdata_avahi_publish_service
+  when: netdata_avahi_publish is defined and netdata_avahi_publish and avahi_daemon_running
 
-- name: Ensure the ntfy avahi-publish systemd service is enabled and started
+- name: Ensure the netdata avahi-publish systemd service is enabled and started
   ansible.builtin.systemd_service:
-    name: avahi-publish-ntfy.service
-    state: "{{ 'restarted' if ntfy_avahi_publish_service.changed else 'started' }}"
+    name: avahi-publish-netdata.service
+    state: "{{ 'restarted' if netdata_avahi_publish_service.changed else 'started' }}"
     enabled: yes
-    daemon_reload: "{{ ntfy_avahi_publish_service.changed }}"
+    daemon_reload: "{{ netdata_avahi_publish_service.changed }}"
   become: true
-  when: ntfy_avahi_publish is defined and  ntfy_avahi_publish and avahi_daemon_running
+  when: netdata_avahi_publish is defined and  netdata_avahi_publish and avahi_daemon_running
