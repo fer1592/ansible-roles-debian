@@ -134,11 +134,12 @@
   become: true
   when: sshd_password_authentication.changed or sshd_pubkey_authentication.changed
 
-- name: Ensure ansible-core and pip are installed and up-to-date
+- name: Ensure pip packages are installed and up-to-date
   ansible.builtin.pip:
     name:
       - ansible-core
       - pip
+      - passlib
     state: latest
     executable: "{{ ansible_facts.python_binaries_path }}/pip"
 
