@@ -1,0 +1,104 @@
+---
+- name: Pull the latest netdata image
+  community.docker.docker_image_pull:
+    name: netdata/netdata
+    tag: latest
+    pull: always
+  become: true
+
+- name: Ensure the docker network exists if defined
+  community.docker.docker_network:
+    name: "{{ netdata_docker_network.name }}"
+    driver: "bridge"
+    internal: "{{ netdata_docker_network.internal | default(omit) }}"
+  when: netdata_docker_network is defined
+
+- name: Create basic auth dir if netdata_basic_auth_creds is true
+  ansible.builtin.file:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/netdata"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+  when: netdata_basic_auth_creds is defined
+
+- name: Create basic auth creds for web-server if netdata_basic_auth_creds is true
+  community.general.htpasswd:
+    path: "/home/{{ ansible_facts.user_id }}/ansible-roles-debian-data/netdata/passwdfile"
+    name: "{{ netdata_basic_auth_user }}"
+    password: "{{ netdata_basic_auth_password }}"
+    owner: root
+    group: root
+    mode: 0755
+  become: true
+  when: netdata_basic_auth_creds is defined
+
+- name: Ensure the netdata container is running
+  community.docker.docker_container:
+    name: netdata
+    image: netdata/netdata:latest
+    state: healthy
+    pid_mode: host
+    hostname: netdata
+    auto_remove: false
+    restart_policy: unless-stopped
+    cpus: "{{ netdata_cpus }}"
+    memory: "{{ netdata_memory }}"
+    memory_swap: "{{ netdata_memory }}"
+    detach: true
+    network_mode: "{{ netdata_docker_network.name | default('bridge') }}"
+    published_ports: "{{ netdata_ports | default(omit) }}"
+    capabilities:
+      - "SYS_ADMIN"
+      - "SYS_PTRACE"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:19999/api/v1/info"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes:
+    - "netdataconfig:/etc/netdata:rw"
+    - "netdatalib:/var/lib/netdata:rw"
+    - "netdatacache:/var/cache/netdata:rw"
+    - "/:/host/root:ro,rslave"
+    - "/etc/passwd:/host/etc/passwd:ro"
+    - "/etc/group:/host/etc/group:ro"
+    - "/etc/localtime:/etc/localtime:ro"
+    - "/proc:/host/proc:ro"
+    - "/sys:/host/sys:ro"
+    - "/etc/os-release:/host/etc/os-release:ro"
+    - "/var/log:/host/var/log:ro"
+    - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    - "/run/dbus:/run/dbus:ro"
+    env: "{{ ntfy_env_vars }}"
+    log_driver: json-file
+    log_options:
+      max-size: 50m
+      max-file: "3"
+  become: true
+
+- name: Check if avahi-daemon is running
+  ansible.builtin.set_fact:
+    avahi_daemon_running: "{{ ansible_facts.services['avahi-daemon.service'] is defined and ansible_facts.services['avahi-daemon.service'].state == 'running' }}"
+  when: ntfy_avahi_publish is defined and ntfy_avahi_publish
+
+- name: Ensure the ntfy avahi-publish systemd service is created
+  ansible.builtin.template:
+    src: systemd-avahi-publish.service.j2
+    dest: "/etc/systemd/system/avahi-publish-ntfy.service"
+    mode: 0644
+    owner: root
+  become: true
+  register: ntfy_avahi_publish_service
+  when: ntfy_avahi_publish is defined and ntfy_avahi_publish and avahi_daemon_running
+
+- name: Ensure the ntfy avahi-publish systemd service is enabled and started
+  ansible.builtin.systemd_service:
+    name: avahi-publish-ntfy.service
+    state: "{{ 'restarted' if ntfy_avahi_publish_service.changed else 'started' }}"
+    enabled: yes
+    daemon_reload: "{{ ntfy_avahi_publish_service.changed }}"
+  become: true
+  when: ntfy_avahi_publish is defined and  ntfy_avahi_publish and avahi_daemon_running
