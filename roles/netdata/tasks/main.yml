@@ -75,8 +75,7 @@
     - "/var/log:/host/var/log:ro"
     - "/var/run/docker.sock:/var/run/docker.sock:ro"
     - "/run/dbus:/run/dbus:ro"
-    devices:
-      - "/dev/nvme0n1:/dev/nvme0n1"
+    devices: "{{ netdata_devices }}"
     log_driver: json-file
     log_options:
       max-size: 50m
