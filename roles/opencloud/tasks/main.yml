@@ -140,10 +140,10 @@
       test: ["CMD", "curl", "-f", "-k", "--max-time", "2", "https://localhost:9200/"]
   become: true
 
-- name: Pull the latest collabora image
+- name: Pull the v26.04.2.1.1 collabora image
   community.docker.docker_image_pull:
     name: collabora/code
-    tag: "latest"
+    tag: "26.04.2.1.1"
     pull: always
   become: true
   when: opencloud_collabora_enabled | default(false)
@@ -151,7 +151,7 @@
 - name: Ensure the collabora container is running
   community.docker.docker_container:
     name: collabora
-    image: collabora/code:latest
+    image: collabora/code:26.04.2.1.1
     state: healthy
     hostname: collabora
     auto_remove: false
