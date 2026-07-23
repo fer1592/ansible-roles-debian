@@ -1,12 +1,72 @@
 ---
-- name: Install required development dependencies for Omada Controller
-  ansible.builtin.package:
-    name: python3-dev
+- name: Ensure basic packages are installed
+  ansible.builtin.apt:
+    name:
+    - jsvc
+    - curl
+  become: true
+
+- name: Ensure pip pexpect is installed and up-to-date
+  ansible.builtin.pip:
+    name:
+      - pexpect
+    state: latest
+    executable: "{{ ansible_facts.python_binaries_path }}/pip"
+
+- name: Set DPKG Architecture
+  ansible.builtin.set_fact:
+    dpkg_arch: "{{ 'amd64' if (ansible_facts[\"architecture\"] == 'x86_64' or ansible_facts[\"architecture\"] == 'i386') else 'arm64' }}"
+
+- name: Add MongoDB GPG apt Key
+  ansible.builtin.get_url:
+    url: https://pgp.mongodb.com/server-8.0.asc
+    dest: /etc/apt/keyrings/mongodb-server-8.0.gpg
+    mode: a+r
+  become: true
+
+- name: Check if MongoDB gpg is in place
+  ansible.builtin.stat:
+    path: "{{ omada_controller_mongodb_gpg_path }}"
+  register: mongodb_gpg_present
+
+- name: Import MongoDB GPG key for APT
+  ansible.builtin.shell: |
+    curl -fsSL "{{ omada_controller_mongodb_gpg_url }}" | gpg --batch --dearmor -o "{{ omada_controller_mongodb_gpg_path }}"
+  become: true
+  when: not mongodb_gpg_present.stat.exists
+
+- name: Add MongoDB Repository
+  ansible.builtin.deb822_repository:
+    name: mongodb-org
+    architectures: "{{ dpkg_arch }}"
+    signed_by: "{{ omada_controller_mongodb_gpg_path }}"
+    uris: "{{ omada_controller_mongodb_url }}"
+    components: "{{ omada_controller_mongodb_components }}"
+    suites: "{{ omada_controller_mongodb_suites }}"
     state: present
+    types: "deb"
+    enabled: true
+  become: true
+
+- name: Ensure mongodb is installed
+  ansible.builtin.apt:
+    name:
+    - mongodb-org
+    state: latest
+    update_cache: true
+  become: true
+
+- name: Ensure mongodb service is enabled and running
+  ansible.builtin.service:
+    name: mongod
+    state: started
+    enabled: yes
+    daemon_reload: yes
+  become: true
 
 - name: Check if Omada Controller is already installed
   ansible.builtin.stat:
-    path: /usr/local/bin/omada-controller
+    path: /usr/bin/tpeap
   register: omada_installed
 
 - name: Skip installation - Omada already exists
@@ -17,94 +77,52 @@
 - name: Install Omada Controller
   when: not omada_installed.stat.exists
   block:
-    - name: Ensure Omada Controller system environment is set up
+    - name: Create temp Omada Directory
       ansible.builtin.file:
-        path: "{{ item.path }}"
+        path: "/tmp/omada"
         state: directory
-        owner: omada
-        group: omada
-        mode: "0755"
-      loop:
-        - { path: "/etc/omada-controller", state: directory }
-        - { path: "/var/log/omada-controller/logs", state: directory }
-        - { path: "/etc/omada-controller/data", state: directory }
-      register: omada_dirs
+        mode: '0755'
 
-    - name: Create Omada Controller user
-      ansible.builtin.user:
-        name: omada
-        system: yes
-        shell: /usr/sbin/nologin
-        home: /etc/omada-controller
-        state: present
-
-    - name: Download Omada Controller package
-      ansible.builtin.get_url:
-        url: "{{ omada_controller_download_url }}"
-        dest: "/tmp/omada-controller-{{ omada_controller_version }}.tar.gz"
-        mode: "0644"
-        force: no
-      register: download_result
-
-    - name: Extract Omada Controller package
+    - name: Download & Unzip the archive
       ansible.builtin.unarchive:
-        src: "/tmp/omada-controller-{{ omada_controller_version }}.tar.gz"
-        dest: /tmp/
-        remote_src: yes
-        creates: "/tmp/{{ omada_controller_version }}"
+        src: "{{ omada_controller_download_url }}"
+        dest: "/tmp/omada"
+        remote_src: 'yes'
+        extra_opts:
+          --strip-components=1
 
-    - name: Copy Omada Controller binaries
-      ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: "/etc/omada-controller/{{ item | basename }}"
-        owner: omada
-        group: omada
-        mode: "0755"
-        remote_src: yes
-      loop:
-        - "/tmp/{{ omada_controller_version }}/bin/controller-manager-linux-amd64"
-        - "/tmp/{{ omada_controller_version }}/bin/manager-linux-amd64"
-        - "/tmp/{{ omada_controller_version }}/bin/tl-sg-wsservice-linux-amd64"
-        - "/tmp/{{ omada_controller_version }}/omada-controller.sh"
-      when: item is defined
-
-    - name: Create symbolic link for omada-controller
+    - name: Make install.sh executable
       ansible.builtin.file:
-        src: /etc/omada-controller/manager-linux-amd64
-        dest: /usr/local/bin/omada-controller
-        state: link
+        path: "/tmp/omada/install.sh"
+        mode: a+x
 
-    - name: Create Omada Controller systemd service file
-      ansible.builtin.template:
-        src: omada-controller.service.j2
-        dest: /etc/systemd/system/omada-controller.service
-        mode: "0644"
-      register: omada_service
-
-    - name: Reload systemd daemon
-      ansible.builtin.systemd_service:
-        daemon_reload: yes
-      when: omada_service is defined and (omada_service.changed or omada_service is failed)
+    - name: Install Omada
+      ansible.builtin.expect:
+        command: "./install.sh"
+        responses:
+          'Omada Network Application will be installed in \[.*\] \(y/n\):': "y"
+        chdir: "/tmp/omada"
+        timeout: 300
+      become: true
 
 - name: Ensure Omada Controller service is enabled and started
   ansible.builtin.systemd_service:
-    name: omada-controller.service
+    name: tpeap
     enabled: yes
     state: started
+  become: true
 
 - name: Clean up temporary directory
   ansible.builtin.file:
-    path: "/tmp/{{ omada_controller_version }}"
+    path: "/tmp/omada"
     state: absent
 
-- name: Clean up downloaded package
-  ansible.builtin.file:
-    path: "/tmp/omada-controller-{{ omada_controller_version }}.tar.gz"
-    state: absent
+- name: Check if reboot required
+  ansible.builtin.stat:
+    path: /var/run/reboot-required
+  register: reboot_required
 
-- name: Final Systemd daemon reload
-  ansible.builtin.systemd_service:
-    daemon_reload: yes
-  when:
-    - omada_service is defined and omada_service.changed
-    - omada_dirs is defined and omada_dirs.changed
+- name: Reboot
+  ansible.builtin.reboot:
+    post_reboot_delay: 600
+  when: reboot_required.stat.exists
