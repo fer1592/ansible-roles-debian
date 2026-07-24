@@ -3,8 +3,8 @@ set -eEuf -o pipefail
 
 BACKUP_MOUNT="/mnt/backup"
 BACKUP_FOLDERS=(
-    "~/Code"
-    "~/ansible-roles-debian-data"
+    "/home/$(whoami)/Code"
+    "/home/$(whoami)/ansible-roles-debian-data"
 )
 BACKUP_DATE=$(date +"%d-%m-%Y")
 BACKUP_FILE="debian-server-backup-${BACKUP_DATE}.tar.gz"
