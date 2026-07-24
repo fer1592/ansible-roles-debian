@@ -9,28 +9,38 @@ BACKUP_FOLDERS=(
 BACKUP_DATE=$(date +"%d-%m-%Y")
 BACKUP_FILE="debian-server-backup-${BACKUP_DATE}.tar.gz"
 BACKUP_TEMP_DIR="/home/$(whoami)/backup"
-mkdir -p "$BACKUP_TEMP_DIR"
+BACKUP_EXTERNAL_DEVICE="/dev/sda1"
+
+if [[ -e "$BACKUP_TEMP_DIR" ]];
+    echo "$BACKUP_TEMP_DIR already exists"
+else
+    mkdir -p "$BACKUP_TEMP_DIR"
+fi
 
 echo "=== Starting backup - $(date) ==="
-if [ ${#BACKUP_FOLDERS[@]} -eq 0 ]; then
+if [[ ${#BACKUP_FOLDERS[@]} -eq 0 ]]; then
     echo "Error: No folders defined in the FOLDERS array"
     exit 1
 fi
 
 echo "Folders to backup: ${#BACKUP_FOLDERS[@]}"
 
-echo "Creating compressed backup: $BACKUP_TEMP_DIR/$BACKUP_FILE"
-sudo tar -czf "$BACKUP_TEMP_DIR/$BACKUP_FILE" \
-    --exclude-backups \
-    --exclude-caches \
-    "${BACKUP_FOLDERS[@]}" 2>/tmp/backup-errors.log
-echo "Backup created successfully."
+if [[ -f "$BACKUP_TEMP_DIR/$BACKUP_FILE" ]];
+    echo "Compressed backup already exists at $BACKUP_TEMP_DIR/$BACKUP_FILE. Skipping!"
+else
+    echo "Creating compressed backup: $BACKUP_TEMP_DIR/$BACKUP_FILE"
+    sudo tar -czf "$BACKUP_TEMP_DIR/$BACKUP_FILE" \
+        --exclude-backups \
+        --exclude-caches \
+        "${BACKUP_FOLDERS[@]}" 2>/tmp/backup-errors.log
+    echo "Backup created successfully."
+fi
 
-echo "Mounting external drive ($EXTERNAL_DEVICE)..."
-if mountpoint -q "$BACKUP_MOUNT"; then
+echo "Mounting external drive ($BACKUP_EXTERNAL_DEVICE)..."
+if [[ mountpoint -q "$BACKUP_MOUNT" ]]; then
     echo "Already mounted."
 else
-    sudo mount "$EXTERNAL_DEVICE" "$BACKUP_MOUNT"
+    sudo mount "$BACKUP_EXTERNAL_DEVICE" "$BACKUP_MOUNT"
 fi
 
 echo "Copying backup to external drive..."
