@@ -11,11 +11,8 @@ BACKUP_FILE="debian-server-backup-${BACKUP_DATE}.tar.gz"
 BACKUP_TEMP_DIR="/home/$(whoami)/backup"
 BACKUP_EXTERNAL_DEVICE="/dev/sda1"
 
-if [[ -e "$BACKUP_TEMP_DIR" ]]; then
-    echo "$BACKUP_TEMP_DIR already exists"
-else
-    mkdir -p "$BACKUP_TEMP_DIR"
-fi
+mkdir -p "$BACKUP_TEMP_DIR"
+mkdir -p "$BACKUP_MOUNT"
 
 echo "=== Starting backup - $(date) ==="
 if [[ ${#BACKUP_FOLDERS[@]} -eq 0 ]]; then
@@ -37,6 +34,7 @@ else
 fi
 
 echo "Mounting external drive ($BACKUP_EXTERNAL_DEVICE)..."
+
 if mountpoint -q "$BACKUP_MOUNT"; then
     echo "Already mounted."
 else
