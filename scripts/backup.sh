@@ -12,7 +12,7 @@ BACKUP_TEMP_DIR="/home/$(whoami)/backup"
 BACKUP_EXTERNAL_DEVICE="/dev/sda1"
 
 mkdir -p "$BACKUP_TEMP_DIR"
-mkdir -p "$BACKUP_MOUNT"
+sudo mkdir -p "$BACKUP_MOUNT"
 
 echo "=== Starting backup - $(date) ==="
 if [[ ${#BACKUP_FOLDERS[@]} -eq 0 ]]; then
