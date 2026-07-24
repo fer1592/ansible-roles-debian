@@ -12,18 +12,18 @@ BACKUP_TEMP_DIR="/tmp/backup"
 mkdir -p "$BACKUP_TEMP_DIR"
 
 echo "=== Starting backup - $(date) ==="
-if [ ${#FOLDERS[@]} -eq 0 ]; then
+if [ ${#BACKUP_FOLDERS[@]} -eq 0 ]; then
     echo "Error: No folders defined in the FOLDERS array"
     exit 1
 fi
 
-echo "Folders to backup: ${#FOLDERS[@]}"
+echo "Folders to backup: ${#BACKUP_FOLDERS[@]}"
 
 echo "Creating compressed backup: $BACKUP_TEMP_DIR/$BACKUP_FILE"
 sudo tar -czf "$BACKUP_TEMP_DIR/$BACKUP_FILE" \
     --exclude-backups \
     --exclude-caches \
-    "${FOLDERS[@]}" 2>/tmp/backup-errors.log
+    "${BACKUP_FOLDERS[@]}" 2>/tmp/backup-errors.log
 echo "Backup created successfully."
 
 echo "Mounting external drive ($EXTERNAL_DEVICE)..."
