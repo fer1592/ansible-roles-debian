@@ -8,7 +8,7 @@ BACKUP_FOLDERS=(
 )
 BACKUP_DATE=$(date +"%d-%m-%Y")
 BACKUP_FILE="debian-server-backup-${BACKUP_DATE}.tar.gz"
-BACKUP_TEMP_DIR="/tmp/backup"
+BACKUP_TEMP_DIR="/home/$(whoami)/backup"
 mkdir -p "$BACKUP_TEMP_DIR"
 
 echo "=== Starting backup - $(date) ==="
