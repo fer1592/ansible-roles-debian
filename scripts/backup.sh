@@ -11,7 +11,7 @@ BACKUP_FILE="debian-server-backup-${BACKUP_DATE}.tar.gz"
 BACKUP_TEMP_DIR="/home/$(whoami)/backup"
 BACKUP_EXTERNAL_DEVICE="/dev/sda1"
 
-if [[ -e "$BACKUP_TEMP_DIR" ]];
+if [[ -e "$BACKUP_TEMP_DIR" ]]; then
     echo "$BACKUP_TEMP_DIR already exists"
 else
     mkdir -p "$BACKUP_TEMP_DIR"
@@ -25,7 +25,7 @@ fi
 
 echo "Folders to backup: ${#BACKUP_FOLDERS[@]}"
 
-if [[ -f "$BACKUP_TEMP_DIR/$BACKUP_FILE" ]];
+if [[ -f "$BACKUP_TEMP_DIR/$BACKUP_FILE" ]]; then
     echo "Compressed backup already exists at $BACKUP_TEMP_DIR/$BACKUP_FILE. Skipping!"
 else
     echo "Creating compressed backup: $BACKUP_TEMP_DIR/$BACKUP_FILE"
