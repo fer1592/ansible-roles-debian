@@ -37,7 +37,7 @@ else
 fi
 
 echo "Mounting external drive ($BACKUP_EXTERNAL_DEVICE)..."
-if [[ mountpoint -q "$BACKUP_MOUNT" ]]; then
+if mountpoint -q "$BACKUP_MOUNT"; then
     echo "Already mounted."
 else
     sudo mount "$BACKUP_EXTERNAL_DEVICE" "$BACKUP_MOUNT"
