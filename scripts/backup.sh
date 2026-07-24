@@ -40,5 +40,7 @@ echo "Success! Backup saved as: $BACKUP_MOUNT/$BACKUP_FILE"
 echo "Unmounting..."
 sudo umount "$BACKUP_MOUNT"
 
+rm -rf "$BACKUP_TEMP_DIR"
+
 echo "=== Backup finished - $(date) ==="
 echo -e "\a"
